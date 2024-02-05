@@ -16,6 +16,7 @@ function handleSocket(server) {
                 console.log(`Received data: ${playerId} joined ${gameId} with ${chips} chips`);
                 const sockets = io.sockets.adapter.rooms.get(gameId);
                 console.log("Sockets in room:", sockets.size);
+            
                 if (!rooms[gameId]) {
                     rooms[gameId] = { players: [], pokerGame: null };
                 }

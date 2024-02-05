@@ -1,12 +1,5 @@
 // controllers/rummyController.js
 const pokerModel = require('../models/pokerGameModel');
-
-
-
-
-
-
-
 const createPokerGame = async (req, res) => {
     try {
         const { name, type, countries, chips, noOfPlayer } = req.body;

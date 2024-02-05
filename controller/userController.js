@@ -11,7 +11,6 @@ const createUser = async (req, res) => {
   }
 };
 
-
 const listUsers = async (req, res) => {
   try {
     const users = await UserModel.find();
@@ -22,7 +21,6 @@ const listUsers = async (req, res) => {
   }
 };
 
-// Controller function for reading a user by ID
 const getUserById = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -68,4 +66,4 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports={createUser,listUsers,getUserById,updateUser,deleteUser}
+module.exports = { createUser, listUsers, getUserById, updateUser, deleteUser }
