@@ -3,28 +3,28 @@ class PokerPlayer {
         this.id = id; // Player ID
         this.playerId = playerId; // Player ID
         this.gameId = gameId; // Player ID
-        this.chips = chips; // Player's chips/money
+        this.chips = chips; 
+        this.totalChips=0// Player's chips/money
         this.folded = folded; // Flag indicating if the player has folded
         this.allIn = allIn; // Flag indicating if the player is all-in
         this.cards = cards; // Player's cards (initially empty)
-        this.blindName= null    // gives to position
-        this.action = null   
-        this.currentBet=0   // take for reference for next player 
+        this.blindName = null    // gives to position
+        this.action = null
+        this.currentBet = 0   // take for reference for next player 
     }
-    
+
 
     // Getter methods to access player details
     getId() {
         return this.id;
     }
-
     getplayerId() {
         return this.playerId;
     }
     getgameId() {
         return this.gameId;
     }
-    
+
     getChips() {
         return this.chips;
     }
