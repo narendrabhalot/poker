@@ -4,10 +4,8 @@ const createPokerGame = async (req, res) => {
     try {
         const { name, type, countries, chips, noOfPlayer } = req.body;
 
-        console.log('Received data:', req.body); // Log received data
-
-        // Your additional logic to validate selectedPlayersRange here
-      
+        console.log('Received data:', req.body); 
+    
         const newGame = new pokerModel({
             name, type, countries, chips, noOfPlayer
         });

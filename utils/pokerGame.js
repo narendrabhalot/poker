@@ -14,13 +14,13 @@ class PokerGame {
     this.bigBlindPosition = (this.dealerPosition + 2) % this.numberOfPlayers;
     this.pot = 0;
     this.deck = [];
+    this.gameRound = 0
     this.currentPlayerIndex = this.smallBlindPosition
     this.previousPlayer = this.players[this.currentPlayerIndex]
     this.currentPlayer = this.players[this.smallBlindPosition]
-    this.maxBet = 0.1
+    this.maxBet = 0.2
     this.minBet = 0
     this.currentBet = 0.1
-    this.initialBet = 0.1
     this.activePlayers = players.slice()
     this.status = 'started';
     this.firstRoundCompleted = false;
@@ -43,6 +43,7 @@ class PokerGame {
       await this.startTurnRound(io, room)
       console.log('Game has completed the turn round');
       await this.startRiverRound(io, room)
+      console.log('Game has completed the river round');
       await this.declareWinner(io, room)
     } catch (err) {
       console.error('Error occurred:', err);
@@ -86,7 +87,7 @@ class PokerGame {
     this.currentPlayerIndex = this.smallBlindPosition
     this.previousPlayer = this.players[this.currentPlayerIndex]
     this.currentPlayer = this.players[this.smallBlindPosition]
-    this.maxBet = 0.1
+    this.maxBet = 0.2
     this.currentBet = 0.1
     this.initialBet = 0.1
     this.roundNumber = 0
@@ -141,66 +142,32 @@ class PokerGame {
   }
   async startBettingRound(io, room) {
     try {
-
       await this.deductChips(this.currentPlayer, 0.1)
       this.previousPlayer = this.currentPlayer;
-      // console.log("previousPlayer is inside th SB", this.previousPlayer)
       this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
       this.currentPlayer = this.players[this.currentPlayerIndex]
-      // if (this.currentPlayer.blindName == 'SB') {
-      //   try {
-      //     await this.deductChips(this.currentPlayer, 0.1)
-      //     this.previousPlayer = this.currentPlayer;
-      //     // console.log("previousPlayer is inside th SB", this.previousPlayer)
-      //     this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
-      //     this.currentPlayer = this.players[this.currentPlayerIndex]
-      //   } catch (error) {
-      //     console.error("Error during small blind actions:", error);
-      //   }
-      // }
+      this.currentBet = 0.2
       while (this.status !== 'ended' && this.activePlayers.length > 1) {
-        // let this.currentPlayer = this.players[this.currentPlayerIndex];
-        if (this.currentPlayer.blindName == 'BB') {
-          try {
-            // console.log("inside the BB")
-            await this.displayPlayerOptions(io, this.currentPlayer);
-            let action = await waitForPlayerActionOrTimeout(this.currentPlayer, io);
-            console.log("action for BB", action)
-            // console.log("type of in action i BB ", typeof action)
-            // Handle player action (e.g., raise, fold, check)
-            await this.handlePlayerAction(this.currentPlayer, action);
-            console.log("currentPlayer in a before changing player ", this.currentPlayer)
-            this.previousPlayer = this.currentPlayer;
-            // console.log("previousPlayer is inside the BB ", this.previousPlayer)
-            // console.log("currunt player inddex brfore the bb", this.currentPlayerIndex)
-            this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
-            // console.log("currunt player brfore the bb", this.currentPlayer)
-            this.currentPlayer = this.players[this.currentPlayerIndex]
-            // console.log("currunt player after the bb", this.currentPlayer)
-          } catch (err) {
-            console.error('Error handling BB action:', err);
+        try {
+          await this.displayPlayerOptions(io, this.currentPlayer);
+          let action = await waitForPlayerActionOrTimeout(this.currentPlayer, io);
+          this.currentBet = action.chips
+          if (this.maxBet < action.chips) {
+            this.maxBet = action.chips
           }
-        } else {
-          try {
-            await this.displayPlayerOptions(io, this.currentPlayer);
-            let action = await waitForPlayerActionOrTimeout(this.currentPlayer, io);
-            this.currentPlayer.action = action.action
-            if (action.bet) {
-              this.maxBet = action.bet
-            }
-            await this.handlePlayerAction(this.currentPlayer, action);
-            console.log("currentPlayer in a before changing player ", this.currentPlayer)
-            this.previousPlayer = this.currentPlayer;
-            // console.log("previousPlayer is inside the elae of player", this.previousPlayer)
-            this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
-            this.currentPlayer = this.players[this.currentPlayerIndex]
-          } catch (err) {
-            console.error('Error handling in next player:', err);
-          }
+          await this.handlePlayerAction(this.currentPlayer, action);
+
+          this.previousPlayer = this.currentPlayer;
+          this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
+          this.currentPlayer = this.players[this.currentPlayerIndex]
+        } catch (err) {
+          console.error('Error handling in next player:', err);
         }
-        console.log("max bet ", this.maxBet)
-        console.log("this.currentPlayer.totalChips", this.currentPlayer.totalChips)
         if (this.activePlayers.length <= 1 || this.maxBet == this.currentPlayer.totalChips) {
+          this.players.forEach(player => { player.totalChips = 0 });
+          this.currentBet = 0
+          this.maxBet = 0
+          this.gameRound = 1
           break;
         }
       }
@@ -236,9 +203,8 @@ class PokerGame {
       this.communityCard = this.communityCard.concat(riverCards)
       console.log("riverCards", riverCards)
       await io.to(room).emit('riverCards', riverCards);
-      await this.riverCardBattingRound(io)
-      // console.log("all player is", this.players)
-      // console.log("all communitycard is", this.communityCard)
+      await this.flopCardBattingRound(io)
+
     } catch (err) {
       console.error('Error starting river round:', err);
     }
@@ -257,19 +223,36 @@ class PokerGame {
       this.currentPlayer = this.players[this.currentPlayerIndex]
       while (this.status !== 'ended' && this.activePlayers.length > 1) {
         try {
+          console.log("player detail before the action option ", this.currentPlayer)
+          console.log("maximum bet amount  before the action option ", this.maxBet)
+          console.log("current amount  before the action option ", this.currentBet)
           await this.displayPlayerOptions(io, this.currentPlayer);
           let action = await waitForPlayerActionOrTimeout(this.currentPlayer, io);
+          // console.log("action inside the flopcard batttinground ", action)
+          this.currentBet = action.chips
+          if (this.maxBet < action.chips) {
+            this.maxBet = action.chips
+          }
           await this.handlePlayerAction(this.currentPlayer, action);
           this.previousPlayer = this.currentPlayer;
-
           this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
           this.currentPlayer = this.players[this.currentPlayerIndex]
         } catch (err) {
           console.error('Error handling in next player:', err);
         }
-
-        if (this.activePlayers.length <= 1 || this.currentPlayerIndex == this.smallBlindPosition) {
-          break;
+        // console.log("this.maxBet == this.currentPlayer.totalChips", this.maxBet, this.currentPlayer.totalChips)
+        if (this.activePlayers.length <= 1 || this.maxBet == this.currentPlayer.totalChips) {
+          if (this.currentPlayerIndex == this.smallBlindPosition) {
+            this.players.forEach(player => {
+              player.totalChips = 0;
+            })
+            break;
+          } else if (this.maxBet > 0) {
+            this.players.forEach(player => { player.totalChips = 0 });
+            this.currentBet = 0
+            this.maxBet = 0
+            break;
+          }
         }
       }
     } catch (err) {
@@ -303,84 +286,74 @@ class PokerGame {
     }
   }
   async displayPlayerOptions(io, currentPlayer) {
-    // console.log("currentPlayer in a displayPlayerOptions", currentPlayer)
     try {
-      let callChips = this.currentBet < 0.2 ? 0.2 : this.currentBet - this.currentPlayer.totalChips
-      let betChips = currentPlayer.chips
-      let maxbet = this.maxBet
+      const { chips: betChips, totalChips } = currentPlayer;
+      // console.log("betChips,totalChips", betChips, totalChips)
+      let callChips = 0
+      if (this.currentBet == 0 || this.currentBet == 0.1) {
+        callChips = 0.1
+      } else {
+        callChips = this.maxBet - totalChips;
+        callChips = callChips.toFixed(2);
+      }
+      const maxbet = this.maxBet;
       if (betChips <= maxbet) {
         await io.to(currentPlayer.id).emit('displayPlayerOptions', {
           detail: {
             action: ["allIn"],
-            betChipsrange: betChips
+            betChipsRange: betChips
           }
         });
-      } else if (betChips > maxbet && this.previousPlayer.action == "check") {
+      } else {
+        const actionOptions = this.previousPlayer.action === "check"  || (this.gameRound == 1  && this.maxBet==0 )
+          ? ["call", "bet", "check", "allIn"]
+          : ["call", "bet", "allIn"];
         await io.to(currentPlayer.id).emit('displayPlayerOptions', {
           detail: {
-            action: ["call", "bet", "check"],
+            action: actionOptions,
             callChips: callChips,
-            betChipsrange: betChips
+            betChipsRange: betChips
           }
-        })
-      } else if (betChips > maxbet && this.previousPlayer.action == "check") {
-        await io.to(currentPlayer.id).emit('displayPlayerOptions', {
-          detail: {
-            action: ["call", "bet", "check", "allIn "],
-            callChips: callChips,
-            betChipsrange: betChips,
-            allIn: betChips
-          }
-        })
-      } else if (betChips > maxbet && this.previousPlayer.action !== "check") {
-        await io.to(currentPlayer.id).emit('displayPlayerOptions', {
-          detail: {
-            action: ["call", "bet", "allIn"],
-            callChips: callChips,
-            betChipsrange: betChips
-          }
-        })
+        });
       }
     } catch (error) {
       console.error("Error retrieving maximum bet:", error);
-
     }
   }
   async handlePlayerAction(player, actionData) {
-    console.log("actionData is a ", actionData)
     try {
-      const { action, chips } = actionData
-      console.log(" inside the handlePlayeraction the bet ", action, chips)
-      if (action == 'bet') {
-        console.log("inside the bet ", action, chips)
-        this.handleBet(Number(chips))
-      } else if (action == 'call') {
-        this.handleCall(Number(chips))
-      } else if (action == 'fold') {
-        player.action = "fold"
-        this.activePlayers.splice(this.activePlayers.indexOf(player), 1);
-      } else if (action === 'check') {
-        player.action = "check"
-      } else if (action === 'allIn') {
-        player.action = "check"
-        player.chips = 0
+      const { action, chips } = actionData;
+      const normalizedChips = Number(chips);
+
+      switch (action) {
+        case 'bet':
+          this.handleBet(normalizedChips);
+          break;
+        case 'call':
+          this.handleCall(normalizedChips);
+          break;
+        case 'fold':
+          player.action = 'fold';
+          this.activePlayers.splice(this.activePlayers.indexOf(player), 1);
+          break;
+        case 'check':
+        case 'allIn':
+          player.action = action;
+          player.chips = action === 'allIn' ? 0 : player.chips;
+          this.players[this.currentPlayerIndex].totalChips += chips
+          break;
+        default:
+          console.warn('Invalid player action:', action);
       }
     } catch (err) {
       console.error('Error handling player action:', err);
     }
   }
-  // checkRoundCompleted() {
-  //   // Define conditions for round completion based on your game rules
-  //   return  this.activePlayers.length <= 1 || this.currentPlayerIndex == this.smallBlindPosition
-  // }
   handleBet(chips) {
-    console.log("this.players[this.currentPlayerIndex].chips", this.players[this.currentPlayerIndex].chips)
     this.players[this.currentPlayerIndex].chips -= chips
     this.players[this.currentPlayerIndex].totalChips += chips
-    console.log("this.players[this.currentPlayerIndex].totalChips", this.players[this.currentPlayerIndex].totalChips)
+    this.maxBet = this.players[this.currentPlayerIndex].totalChips
     this.pot += chips
-    this.currentBet = chips
-    this.maxBet = chips
     this.players[this.currentPlayerIndex].action = 'bet';
   }
   handleCall(chips) {
@@ -397,28 +370,26 @@ class PokerGame {
     }
   }
   async endGame(io, room) {
-
     this.gameOver = true;
     io.to(room).emit('gameEnded', { message: 'Game over! Thank you for playing!' });
     console.log("after conplete the game ")
 
     await this.resetGame(io, room)
   }
-
 }
 async function waitForPlayerActionOrTimeout(currentPlayer, io) {
   const timeout = 50000;
   return new Promise((resolve, reject) => {
     let timeoutId = setTimeout(() => {
       io.to(currentPlayer.id).emit('blindTrnWithOutAction', { data: currentPlayer.socket.id });
-      resolve({ action: 'call', chips: this.maxBet });
+      resolve({ action: 'call', chips: 0.2 });
     }, timeout);
     currentPlayer.socket.on('playerAction', (data) => {
       clearTimeout(timeoutId);
       console.log("data after clear time out", data)
       resolve(data);
     });
-    currentPlayer.socket.on('disconnect', reject);
+    currentPlayer.socket.on('disconnect `', reject);
   });
 }
 
