@@ -1,20 +1,18 @@
 class PokerPlayer {
     constructor(id, playerId, gameId, chips = 0, folded = false, allIn = false, cards = []) {
-        this.id = id; // Player ID
-        this.playerId = playerId; // Player ID
-        this.gameId = gameId; // Player ID
-        this.chips = chips; 
-        this.totalChips=0// Player's chips/money
-        this.folded = folded; // Flag indicating if the player has folded
-        this.allIn = allIn; // Flag indicating if the player is all-in
-        this.cards = cards; // Player's cards (initially empty)
-        this.blindName = null    // gives to position
+        this.id = id;
+        this.status = 0
+        this.playerId = playerId;
+        this.gameId = gameId;
+        this.chips = chips;
+        this.totalChips = 0
+        this.folded = folded;
+        this.allIn = allIn;
+        this.cards = cards;
+        this.blindName = null
         this.action = null
-        this.currentBet = 0   // take for reference for next player 
+        this.currentBet = 0
     }
-
-
-    // Getter methods to access player details
     getId() {
         return this.id;
     }
@@ -24,7 +22,6 @@ class PokerPlayer {
     getgameId() {
         return this.gameId;
     }
-
     getChips() {
         return this.chips;
     }
@@ -37,14 +34,13 @@ class PokerPlayer {
     getCards() {
         return this.cards;
     }
-    // Setter methods to update player details
+    
     setChips(amount) {
         this.chips = amount;
     }
     setFolded(status) {
         this.folded = status;
     }
-
     setAllIn(status) {
         this.allIn = status;
     }

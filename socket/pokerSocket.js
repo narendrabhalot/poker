@@ -13,22 +13,29 @@ function handleSocket(server) {
                 if (!playerId || !tableId || isNaN(chips) || chips <= 0) {
                     throw new Error('Invalid playerId, tableId, or chips');
                 }
-                await handleplayer(tableId, rooms)
-                socket.join(tableId, () => {
-                    socket.tableId = tableId;
-                    socket.playerId = playerId
-                });
-                console.log(`Received data: ${playerId} joined ${tableId} with ${chips} chips`);
-                const sockets = io.sockets.adapter.rooms.get(tableId);
-                console.log("Sockets in room:", sockets.size);
-
                 if (!rooms[tableId]) {
                     rooms[tableId] = { players: [], pokerGame: null };
                 }
                 const player = new PokerPlayer(socket.id, playerId, tableId, chips);
                 player.socket = socket;
                 rooms[tableId].players.push(player);
+                socket.join(tableId, () => {
+                    socket.tableId = tableId;
+                    socket.playerId = playerId;
+                });
                 const numPlayers = rooms[tableId].players.length;
+                console.log(numPlayers)
+                if (numPlayers > 6) {
+                    console.log("Total players in the particular room:", numPlayers);
+                    await io.to(socket.id).emit('game-message', "wait until sit is available ");
+                    return;
+                }
+                console.log(`Received data: ${playerId} joined ${tableId} with ${chips} chips`);
+                const sockets = io.sockets.adapter.rooms.get(tableId);
+                console.log("Sockets in room:", sockets.size);
+
+
+
                 if (numPlayers >= 2 && !rooms[tableId].pokerGame) {
                     console.log("numPlayers is", numPlayers);
                     rooms[tableId].pokerGame = new PokerGame(rooms[tableId].players, tableId, 2);
