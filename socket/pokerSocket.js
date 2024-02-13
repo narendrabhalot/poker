@@ -2,41 +2,44 @@ const socketIO = require('socket.io');
 const PokerPlayer = require('../utils/pokerPlayer');
 const PokerGame = require('../utils/pokerGame');
 
+
 function handleSocket(server) {
     const io = socketIO(server);
     const rooms = {};
     io.on('connection', (socket) => {
         console.log('User is connected');
-        socket.on('gameJoin', async (playerId, gameId, chips) => {
+        socket.on('gameJoin', async (playerId, tableId, chips) => {
             try {
-                if (!playerId || !gameId || isNaN(chips) || chips <= 0) {
-                    throw new Error('Invalid playerId, gameId, or chips');
+                if (!playerId || !tableId || isNaN(chips) || chips <= 0) {
+                    throw new Error('Invalid playerId, tableId, or chips');
                 }
-                socket.join(gameId);
-                console.log(`Received data: ${playerId} joined ${gameId} with ${chips} chips`);
-                const sockets = io.sockets.adapter.rooms.get(gameId);
+                await handleplayer(tableId, rooms)
+                socket.join(tableId, () => {
+                    socket.tableId = tableId;
+                    socket.playerId = playerId
+                });
+                console.log(`Received data: ${playerId} joined ${tableId} with ${chips} chips`);
+                const sockets = io.sockets.adapter.rooms.get(tableId);
                 console.log("Sockets in room:", sockets.size);
-            
-                if (!rooms[gameId]) {
-                    rooms[gameId] = { players: [], pokerGame: null };
+
+                if (!rooms[tableId]) {
+                    rooms[tableId] = { players: [], pokerGame: null };
                 }
-                const player = new PokerPlayer(socket.id, playerId, gameId, chips);
-                player.socket = socket;                
-                rooms[gameId].players.push(player);
-                const numPlayers = rooms[gameId].players.length;               
-                if (numPlayers >= 3 && !rooms[gameId].pokerGame) {
-                    console.log("Inside the room");
-                    console.log("numPlayers is",numPlayers);
-                    rooms[gameId].pokerGame = new PokerGame(rooms[gameId].players, gameId, 2);
+                const player = new PokerPlayer(socket.id, playerId, tableId, chips);
+                player.socket = socket;
+                rooms[tableId].players.push(player);
+                const numPlayers = rooms[tableId].players.length;
+                if (numPlayers >= 2 && !rooms[tableId].pokerGame) {
+                    console.log("numPlayers is", numPlayers);
+                    rooms[tableId].pokerGame = new PokerGame(rooms[tableId].players, tableId, 2);
                     try {
-                        rooms[gameId].pokerGame.startGame(io, gameId);
+                        rooms[tableId].pokerGame.startGame(io, tableId);
                     } catch (error) {
                         console.error('Error starting game:', error);
                     }
                 }
             } catch (error) {
                 console.error('Error in gameJoin:', error);
-                // Log detailed error information for debugging
                 console.error(error.stack);
                 io.to(socket.id).emit('error', error.message);
             }
@@ -44,9 +47,9 @@ function handleSocket(server) {
         socket.on('disconnect', () => {
             console.log('A user disconnected');
             const sockets = io.sockets.adapter.rooms.get("123aa");
-                console.log("Sockets in room:", sockets.size);
-            for (const gameId in rooms) {
-                const room = rooms[gameId];
+            console.log("Sockets in room:", sockets.size);
+            for (const roomId in rooms) {
+                const room = rooms[tableId];
                 const index = room.players.findIndex((p) => p.socketId === socket.id);
                 if (index !== -1) {
                     room.players.splice(index, 1);
@@ -58,5 +61,7 @@ function handleSocket(server) {
         });
     });
 }
+
+
 
 module.exports = handleSocket;

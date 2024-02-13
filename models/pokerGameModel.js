@@ -9,9 +9,9 @@ const pokerGameSchema = new mongoose.Schema({
         min: 2,
         max: 10,
         required: true,
-        default:10
+        default: 10
     },
-});
+}, { timestamps: true });
 module.exports = mongoose.model('PokerGame', pokerGameSchema);
 
 

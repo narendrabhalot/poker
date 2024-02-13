@@ -223,9 +223,7 @@ class PokerGame {
       this.currentPlayer = this.players[this.currentPlayerIndex]
       while (this.status !== 'ended' && this.activePlayers.length > 1) {
         try {
-          console.log("player detail before the action option ", this.currentPlayer)
-          console.log("maximum bet amount  before the action option ", this.maxBet)
-          console.log("current amount  before the action option ", this.currentBet)
+
           await this.displayPlayerOptions(io, this.currentPlayer);
           let action = await waitForPlayerActionOrTimeout(this.currentPlayer, io);
           // console.log("action inside the flopcard batttinground ", action)
@@ -234,6 +232,9 @@ class PokerGame {
             this.maxBet = action.chips
           }
           await this.handlePlayerAction(this.currentPlayer, action);
+          console.log("player detail before the action option ", this.currentPlayer)
+          console.log("maximum bet amount  before the action option ", this.maxBet)
+          console.log("current amount  before the action option ", this.currentBet)
           this.previousPlayer = this.currentPlayer;
           this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
           this.currentPlayer = this.players[this.currentPlayerIndex]
@@ -305,7 +306,7 @@ class PokerGame {
           }
         });
       } else {
-        const actionOptions = this.previousPlayer.action === "check"  || (this.gameRound == 1  && this.maxBet==0 )
+        const actionOptions = this.previousPlayer.action === "check" || (this.gameRound == 1 && this.maxBet == 0)
           ? ["call", "bet", "check", "allIn"]
           : ["call", "bet", "allIn"];
         await io.to(currentPlayer.id).emit('displayPlayerOptions', {
