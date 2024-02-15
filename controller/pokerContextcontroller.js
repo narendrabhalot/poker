@@ -11,7 +11,7 @@ const createPokerContest = async (req, res) => {
             contestAmount,
         });
         await newContest.save();
-        res.status(201).json({ status: true, message: 'new poker contest created  successfully', game: newContest });
+        res.status(201).send({ status: true, message: 'new poker contest created  successfully', game: newContest });
     } catch (err) {
         console.error('Error:', err);
         res.status(500).json({ error: 'Internal server error' });
