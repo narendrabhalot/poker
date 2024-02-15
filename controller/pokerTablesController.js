@@ -1,4 +1,4 @@
-const pokertableModel = require('../models/pokertablesModel')
+const pokertableModel = require('../models/pokerTablesModel')
 const PokerContest = require('../models/pokerContextModel')
 
 const createPokerTable = async (req, res) => {
