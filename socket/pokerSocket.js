@@ -14,10 +14,10 @@ function handleSocket(server) {
                 }
                 let room = rooms.get(tableId);
                 if (!room) {
-                    room = { players: [], pokerGame: null, creatingGame: false }
+                    room = { players: [], pokerGame: null, creatingGame: false };
                     rooms.set(tableId, room);
                 }
-                console.log("rooms is", rooms)
+                console.log("rooms is", rooms);
                 const numPlayers = room.players.length;
                 console.log(numPlayers);
                 if (numPlayers > 6) {
@@ -31,10 +31,17 @@ function handleSocket(server) {
                 socket.join(tableId, () => {
                     socket.tableId = tableId;
                 });
-                socket.player = player
-                const reqParmetre = { playerId, chips, roomId: tableId, contestId };
-                await pokerPlayerRoomModel.create(reqParmetre);
+                socket.player = player;
+                const reqParameter = { playerId, chips, roomId: tableId, contestId };
+                await pokerPlayerRoomModel.create(reqParameter);
+                const roomSockets = io.sockets.adapter.rooms.get(tableId);
                 console.log(`Received data: ${playerId} joined ${tableId} with ${chips} chips`);
+                io.to(tableId).emit('room message', {
+                    playerCount: roomSockets ? roomSockets.size : 0,
+                    message: `${playerId} joined ${tableId} with ${chips} chips`,
+                    id: socket.id,
+                    userId: socket.playerId
+                });
                 room = rooms.get(tableId);
                 console.log("room.pokerGame", room.pokerGame, room.players.length)
                 if (room.players.length >= 2 && room.pokerGame == null) {
@@ -46,7 +53,7 @@ function handleSocket(server) {
                     } catch (error) {
                         console.error('Error starting game:', error);
                     } finally {
-                        room.creatingGame = false; // Release the lock
+                        room.creatingGame = false;
                     }
                 }
 
