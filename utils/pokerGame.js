@@ -384,7 +384,7 @@ class PokerGame {
   }
 }
 async function waitForPlayerActionOrTimeout(currentPlayer, io) {
-  const timeout = 15000;
+  const timeout = 30000;
   return new Promise((resolve, reject) => {
     let timeoutId = setTimeout(() => {
       io.to(currentPlayer.id).emit('blindTrnWithOutAction', { data: currentPlayer.socket.id });
