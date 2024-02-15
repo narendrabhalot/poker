@@ -37,12 +37,10 @@ function handleSocket(server) {
                 console.log(`Received data: ${playerId} joined ${tableId} with ${chips} chips`);
                 room = rooms.get(tableId);
                 console.log("room.pokerGame", room.pokerGame, room.players.length)
-                if (room.players.length >= 2 && room.pokerGame == null ) {
+                if (room.players.length >= 2 && room.pokerGame == null) {
                     console.log("numPlayers is", numPlayers);
-                    room.creatingGame = true;
                     try {
-                        const snapshotPlayers = room.players.slice();
-                        rooms.get(tableId).pokerGame = new PokerGame(snapshotPlayers, tableId, 2);
+                        rooms.get(tableId).pokerGame = new PokerGame(room.players, tableId, 2);
                         console.log(rooms.get(tableId).pokerGame);
                         rooms.get(tableId).pokerGame.startGame(io, tableId);
                     } catch (error) {
@@ -51,6 +49,7 @@ function handleSocket(server) {
                         room.creatingGame = false; // Release the lock
                     }
                 }
+
             } catch (error) {
                 console.error('Error in gameJoin:', error);
                 console.error(error.stack);

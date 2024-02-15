@@ -1,7 +1,7 @@
 
 const winners = require('../helper/winner')
 
-const handleSocket = require('../socket/pokerSocket')
+const handleSocket= require('../socket/pokerSocket')
 
 class PokerGame {
   constructor(players, gameId, cardsPerPlayer = 2) {
@@ -10,8 +10,7 @@ class PokerGame {
     }
     this.gameId = gameId;
     this.cardsPerPlayer = cardsPerPlayer;
-    this.totalPlayer = players
-    this.players = players.slice()
+    this.players = players;
     this.numberOfPlayers = this.players.length;
     this.dealerPosition = 0;
     this.smallBlindPosition = (this.dealerPosition + 1) % this.numberOfPlayers;
@@ -25,6 +24,7 @@ class PokerGame {
     this.maxBet = 0.2
     this.minBet = 0
     this.currentBet = 0.1
+    this.activePlayers = players.slice()
     this.status = 'started';
     this.firstRoundCompleted = false;
     this.communityCard = []
@@ -40,10 +40,10 @@ class PokerGame {
       await this.emitCardsAndPositions(io, room);
       await this.emitPositions(io, room);
       await this.startBettingRound(io, room);
-      console.log("start Batting round player", this.players)
+      console.log("startBatting round player", this.players)
       console.log('Game has completed the first round.');
       await this.startFlopRound(io, room);
-      console.log("startflopround round player", this.players)
+      console.log("start round player", this.players)
       console.log('Game has completed the flop round');
       await this.startTurnRound(io, room)
       console.log('Game has completed the turn round');
@@ -81,7 +81,7 @@ class PokerGame {
   }
   async resetGame(io, room) {
     console.log("game have comleted new game start")
-    for (const player of this.totalPlayer) {
+    for (const player of this.players) {
       player.cards = [];
     }
     this.dealerPosition = (this.dealerPosition + 1) % this.numberOfPlayers;
@@ -96,7 +96,7 @@ class PokerGame {
     this.currentBet = 0.1
     this.initialBet = 0.1
     this.roundNumber = 0
-    this.players = this.totalPlayer.slice()
+    this.activePlayers = this.players.slice()
     this.status = 'started';
     this.firstRoundCompleted = false;
     this.communityCard = []
