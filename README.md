@@ -10,7 +10,7 @@
 
 
 **` client emiting   events`** [
-    1.  gameJoin(with three argument):-  playerId, gameId, chips,contestId
+    1.  gameJoin(with six argument):-  playerId, gameId, chips,contestId,smallBlindAmount,bigBlingAmount
     2. playerAction :- example {
                               "action":"call",
                                "chips" :50
