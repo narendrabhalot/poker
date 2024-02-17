@@ -1,13 +1,13 @@
 class PokerPlayer {
-    constructor(id, playerId, gameId, chips = 0, folded = false, allIn = false, cards = []) {
+    constructor(id, playerId, gameId, chips = 0, cards = []) {
         this.id = id;
         this.status = 0
         this.playerId = playerId;
         this.gameId = gameId;
         this.chips = chips;
         this.totalChips = 0
-        this.folded = folded;
-        this.allIn = allIn;
+        this.folded = false;
+        this.allIn = false;
         this.cards = cards;
         this.blindName = null
         this.action = null
@@ -34,7 +34,6 @@ class PokerPlayer {
     getCards() {
         return this.cards;
     }
-    
     setChips(amount) {
         this.chips = amount;
     }

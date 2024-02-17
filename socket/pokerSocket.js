@@ -7,7 +7,7 @@ function handleSocket(server) {
     const rooms = new Map();
     io.on('connection', (socket) => {
         console.log('User is connected');
-        socket.on('gameJoin', async (playerId, tableId, chips, contestId) => {
+        socket.on('gameJoin', async (playerId, tableId, chips, contestId, smallBlindAmount, bigBlindAmount) => {
             try {
                 if (!playerId || !tableId || isNaN(chips) || chips <= 0 || !contestId) {
                     throw new Error('Invalid playerId, tableId, contestId or chips');
@@ -21,7 +21,7 @@ function handleSocket(server) {
                 const numPlayers = room.players.length;
                 console.log(numPlayers);
                 if (numPlayers > 6) {
-                    console.log("Total players in the particular room:", numPlayers);
+
                     await io.to(socket.id).emit('game-message', "Wait until a seat becomes available");
                     return;
                 }
@@ -32,8 +32,6 @@ function handleSocket(server) {
                     socket.tableId = tableId;
                 });
                 socket.player = player;
-                const reqParameter = { playerId, chips, roomId: tableId, contestId };
-                await pokerPlayerRoomModel.create(reqParameter);
                 const roomSockets = io.sockets.adapter.rooms.get(tableId);
                 console.log(`Received data: ${playerId} joined ${tableId} with ${chips} chips`);
                 io.to(tableId).emit('room message', {
@@ -43,18 +41,21 @@ function handleSocket(server) {
                     userId: socket.playerId
                 });
                 room = rooms.get(tableId);
-                console.log("room.pokerGame", room.pokerGame, room.players.length)
+                const reqParameter = { playerId, chips, roomId: tableId, contestId };
+                await pokerPlayerRoomModel.create(reqParameter);
                 if (room.players.length >= 2 && room.pokerGame == null) {
-                    console.log("numPlayers is", numPlayers);
                     try {
                         rooms.get(tableId).pokerGame = new PokerGame(room.players, tableId, 2);
                         console.log(rooms.get(tableId).pokerGame);
-                        rooms.get(tableId).pokerGame.startGame(io, tableId);
+                        rooms.get(tableId).pokerGame.startGame(io, tableId, smallBlindAmount, bigBlindAmount);
                     } catch (error) {
                         console.error('Error starting game:', error);
                     } finally {
                         room.creatingGame = false;
                     }
+                } else {
+                    await io.to(socket.id).emit('game-message', "Wait for a new player to join the game");
+                    return;
                 }
 
             } catch (error) {
