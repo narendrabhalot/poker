@@ -1,5 +1,7 @@
 
 const winners = require('../helper/winner')
+
+const { handleSocket } = require('../socket/pokerSocket')
 const { removePlayer } = require('../helper/helperFunctions')
 class PokerGame {
   constructor(players, gameId, cardsPerPlayer = 2) {
@@ -33,29 +35,29 @@ class PokerGame {
     this.shuffleDeck();
     this.dealInitialCards();
   }
-  async startGame(io, room, smallBlindAmount, bigBlindAmount) {
+  async startGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount) {
     try {
-      await this.emitCardsAndPositions(io, room);
-      await this.emitPositions(io, room);
+      await this.emitCardsAndPositions(io, tableId);
+      await this.emitPositions(io, tableId);
       // console.log(' before the start batting round player ', this.activePlayers)
       // console.log(' before the start batting round  a ctive  player ', this.activePlayers)
-      await this.startBettingRound(io, room, smallBlindAmount, bigBlindAmount);
+      await this.startBettingRound(io, tableId, smallBlindAmount, bigBlindAmount);
       // console.log(' after the start batting round player ', this.activePlayers)
       // console.log(' afterthe start batting round  active player ', this.activePlayers)
       console.log('Game has completed the first round.');
-      await this.startFlopRound(io, room);
+      await this.startFlopRound(io, tableId);
       console.log("start round player", this.activePlayers)
       console.log('Game has completed the flop round');
-      await this.startTurnRound(io, room)
+      await this.startTurnRound(io, tableId)
       console.log('Game has completed the turn round');
-      await this.startRiverRound(io, room)
+      await this.startRiverRound(io, tableId)
       console.log('Game has completed the river round');
-      await this.declareWinner(io, room)
+      await this.declareWinner(io, tableId)
     } catch (err) {
       console.error('Error occurred:', err);
     } finally {
       console.log('Terminating the game.');
-      this.endGame(io, room);
+      this.endGame(io, tableId, rooms);
     }
   }
   initializeDeck() {
@@ -80,7 +82,7 @@ class PokerGame {
       }
     }
   }
-  async resetGame(io, room) {
+  async resetGame(io, tableId) {
     for (const player of this.players) {
       player.status = 0
       player.totalChips = 0
@@ -93,6 +95,8 @@ class PokerGame {
     }
 
     this.activePlayers = this.players.slice()
+
+
     this.numberOfPlayers = this.activePlayers.length;
 
     this.dealerPosition = (this.dealerPosition + 1) % this.numberOfPlayers;
@@ -112,9 +116,9 @@ class PokerGame {
     this.firstRoundCompleted = false;
     this.communityCard = []
     this.initializeGame();
-    this.startGame(io, room)
+    this.startGame(io, tableId)
   }
-  async emitCardsAndPositions(io, room) {
+  async emitCardsAndPositions(io, tableId) {
     for (const player of this.activePlayers) {
       try {
         await io.to(player.id).emit('cards', player.cards);
@@ -124,27 +128,27 @@ class PokerGame {
       }
     }
   }
-  async emitPositions(io, room) {
+  async emitPositions(io, tableId) {
     try {
       let positionArr = ["D", "SB", "BB"];
       let count = 0;
       if (this.activePlayers.length == 2) {
         this.activePlayers[this.dealerPosition].blindName = "BB"
         this.activePlayers[this.smallBlindPosition].blindName = "SB"
-        await io.to(room).emit('blindName', { blindName: "SB", player: this.activePlayers[this.smallBlindPosition].playerId });
-        await io.to(room).emit('blindName', { blindName: "BB", player: this.activePlayers[this.dealerPosition].playerId });
+        await io.to(tableId).emit('blindName', { blindName: "SB", player: this.activePlayers[this.smallBlindPosition].playerId });
+        await io.to(tableId).emit('blindName', { blindName: "BB", player: this.activePlayers[this.dealerPosition].playerId });
       } else if (this.activePlayers.length > 2 && this.dealerPosition > this.bigBlindPosition) {
         this.activePlayers[this.dealerPosition].blindName = "D"
         this.activePlayers[this.smallBlindPosition].blindName = "SB"
         this.activePlayers[this.bigBlindPosition].blindName = "BB"
-        await io.to(room).emit('blindName', { blindName: "D", player: this.players[this.dealerPosition].playerId });
-        await io.to(room).emit('blindName', { blindName: "SB", player: this.players[this.smallBlindPosition].playerId });
-        await io.to(room).emit('blindName', { blindName: "BB", player: this.players[this.bigBlindPosition].playerId });
+        await io.to(tableId).emit('blindName', { blindName: "D", player: this.players[this.dealerPosition].playerId });
+        await io.to(tableId).emit('blindName', { blindName: "SB", player: this.players[this.smallBlindPosition].playerId });
+        await io.to(tableId).emit('blindName', { blindName: "BB", player: this.players[this.bigBlindPosition].playerId });
       } else {
         for (let i = this.dealerPosition; i <= this.bigBlindPosition; i++) {
           this.activePlayers[i].blindName = positionArr[count];
           try {
-            await io.to(room).emit('blindName', { blindName: positionArr[count], player: this.players[i].playerId });
+            await io.to(tableId).emit('blindName', { blindName: positionArr[count], player: this.players[i].playerId });
           } catch (err) {
             console.error("Error emitting blindName to player:", this.activePlayers[i].id, err);
           }
@@ -155,7 +159,7 @@ class PokerGame {
       console.error("Error in emitPositions:", err);
     }
   }
-  async startBettingRound(io, room, smallBlindAmount, bigBlindAmount) {
+  async startBettingRound(io, tableId, smallBlindAmount, bigBlindAmount) {
     try {
 
       await this.deductChips(this.currentPlayer, smallBlindAmount)
@@ -204,46 +208,46 @@ class PokerGame {
       console.error('Error during betting round:', err);
     }
   }
-  async startFlopRound(io, room) {
+  async startFlopRound(io, tableId) {
     try {
       const flopCards = this.deck.splice(-3);
       this.communityCard = this.communityCard.concat(flopCards)
       console.log("flopCards", flopCards)
-      await io.to(room).emit('flopCards', flopCards);
+      await io.to(tableId).emit('flopCards', flopCards);
       await this.flopCardBattingRound(io)
     } catch (err) {
       console.error('Error starting Flop round:', err);
     }
   }
-  async startTurnRound(io, room) {
+  async startTurnRound(io, tableId) {
     try {
       const turnCard = this.deck.splice(-1);
       this.communityCard = this.communityCard.concat(turnCard)
       console.log("turnCards", turnCard)
-      await io.to(room).emit('turnCards', turnCard);
+      await io.to(tableId).emit('turnCards', turnCard);
       await this.flopCardBattingRound(io)
     } catch (err) {
       console.error('Error starting turn  round:', err);
     }
   }
-  async startRiverRound(io, room) {
+  async startRiverRound(io, tableId) {
     try {
       const riverCards = this.deck.splice(-1);
       this.communityCard = this.communityCard.concat(riverCards)
       console.log("riverCards", riverCards)
-      await io.to(room).emit('riverCards', riverCards);
+      await io.to(tableId).emit('riverCards', riverCards);
       await this.flopCardBattingRound(io)
 
     } catch (err) {
       console.error('Error starting river round:', err);
     }
   }
-  async declareWinner(io, room) {
+  async declareWinner(io, tableId) {
     const winner = winners.mergeHandwithCommunityCard(this.players, this.communityCard)
     let filterWinner = this.activePlayers.filter(data => data.id == winner.winnerId)
     filterWinner[0].chips += this.pot
     this.pot = 0
-    await io.to(room).emit('winner', winner);
+    await io.to(tableId).emit('winner', winner);
     await io.to(winner.winnerId).emit('winnerAmount', filterWinner[0].chips)
   }
   async flopCardBattingRound(io) {
@@ -405,14 +409,41 @@ class PokerGame {
       this.pot += chips;
     }
   }
-  async endGame(io, room) {
-    this.gameOver = true;
-    io.to(room).emit('gameEnded', { message: 'Game over! Thank you for playing!' });
-    console.log("after completing the game");
-    setTimeout(async () => {
-      await this.resetGame(io, room);
-    }, 10000);
+  async endGame(io, tableId, rooms) {
+    try {
+      this.gameOver = true;
+      io.to(tableId).emit('gameEnded', { message: 'Game over! Thank you for playing!' });
+
+      if (this.players.length === 1) {
+        try {
+          await io.to(this.players[0].id).emit('room message', "Please wait for a new player to join the game ");
+        } catch (error) {
+          console.error("Error sending message to player:", error);
+        }
+        if (rooms.has(tableId)) {
+          rooms.get(tableId).pokerGame = null;
+          console.log("rooms after remove the player ", rooms);
+          return;
+        } else {
+          console.warn("Room not found; ignoring attempt to remove pokerGame");
+        }
+      } else {
+
+        setTimeout(async () => {
+          try {
+            await this.resetGame(io, tableId);
+          } catch (error) {
+            console.error("Error resetting game:", error);
+          }
+        }, 10000);
+
+      }
+    } catch (error) {
+      console.error("An error occurred during endGame:", error);
+    }
   }
+
+
 
   getActivePlayers() {
     return this.activePlayers;

@@ -44,11 +44,13 @@ function handleSocket(server) {
                 room = rooms.get(tableId);
                 const reqParameter = { playerId, chips, roomId: tableId, contestId };
                 await pokerPlayerRoomModel.create(reqParameter);
+                console.log("room.players.length", room.players)
+                console.log("room.pokerGame", room.pokerGame)
                 if (room.players.length >= 2 && room.pokerGame == null) {
                     try {
                         rooms.get(tableId).pokerGame = new PokerGame(room.players, tableId, 2);
                         console.log(rooms.get(tableId).pokerGame);
-                        rooms.get(tableId).pokerGame.startGame(io, tableId, smallBlindAmount, bigBlindAmount);
+                        rooms.get(tableId).pokerGame.startGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount);
                     } catch (error) {
                         console.error('Error starting game:', error);
                     } finally {
@@ -73,16 +75,21 @@ function handleSocket(server) {
             if (!tableId) return;
             const room = rooms.get(tableId);
             if (!room) return;
-            const index = room.players.findIndex((p) => p.socketId === socket.id);
+            const index = room.players.findIndex((p) => p.id === socket.id);
             if (index !== -1) {
                 room.players.splice(index, 1);
                 if (room.pokerGame) {
                     const activePlayers = room.pokerGame.getActivePlayers()
+                    const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
+                    activePlayers.splice(disConnectActiveIndex, 1)
                     console.log(activePlayers)
                 }
             }
         });
     });
+    function getRooms() {
+        return rooms;
+    }
 }
 
 module.exports = handleSocket;
