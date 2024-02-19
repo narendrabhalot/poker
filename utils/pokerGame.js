@@ -411,7 +411,7 @@ class PokerGame {
     console.log("after completing the game");
     setTimeout(async () => {
       await this.resetGame(io, room);
-    }, 30000);
+    }, 10000);
   }
 
   getActivePlayers() {
