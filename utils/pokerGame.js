@@ -103,7 +103,8 @@ class PokerGame {
     this.currentPlayerIndex = this.smallBlindPosition
     this.previousPlayer = this.activePlayers[this.currentPlayerIndex]
     this.currentPlayer = this.activePlayers[this.smallBlindPosition]
-    this.maxBet = 0.2
+    this.maxBet = 0
+    this.minBet = 0
     this.currentBet = 0.1
     this.initialBet = 0.1
     this.RoundNumber = 0
@@ -130,20 +131,20 @@ class PokerGame {
       if (this.activePlayers.length == 2) {
         this.activePlayers[this.dealerPosition].blindName = "BB"
         this.activePlayers[this.smallBlindPosition].blindName = "SB"
-        await io.to(room).emit('blindName', { blindName: "SB", player: this.activePlayers[this.smallBlindPosition].id });
-        await io.to(room).emit('blindName', { blindName: "BB", player: this.activePlayers[this.dealerPosition].id });
+        await io.to(room).emit('blindName', { blindName: "SB", player: this.activePlayers[this.smallBlindPosition].playerId });
+        await io.to(room).emit('blindName', { blindName: "BB", player: this.activePlayers[this.dealerPosition].playerId });
       } else if (this.activePlayers.length > 2 && this.dealerPosition > this.bigBlindPosition) {
         this.activePlayers[this.dealerPosition].blindName = "D"
         this.activePlayers[this.smallBlindPosition].blindName = "SB"
         this.activePlayers[this.bigBlindPosition].blindName = "BB"
-        await io.to(room).emit('blindName', { blindName: "D", player: this.players[this.dealerPosition].id });
-        await io.to(room).emit('blindName', { blindName: "SB", player: this.players[this.smallBlindPosition].id });
-        await io.to(room).emit('blindName', { blindName: "BB", player: this.players[this.bigBlindPosition].id });
+        await io.to(room).emit('blindName', { blindName: "D", player: this.players[this.dealerPosition].playerId });
+        await io.to(room).emit('blindName', { blindName: "SB", player: this.players[this.smallBlindPosition].playerId });
+        await io.to(room).emit('blindName', { blindName: "BB", player: this.players[this.bigBlindPosition].playerId });
       } else {
         for (let i = this.dealerPosition; i <= this.bigBlindPosition; i++) {
           this.activePlayers[i].blindName = positionArr[count];
           try {
-            await io.to(room).emit('blindName', { blindName: positionArr[count], player: this.players[i].id });
+            await io.to(room).emit('blindName', { blindName: positionArr[count], player: this.players[i].playerId });
           } catch (err) {
             console.error("Error emitting blindName to player:", this.activePlayers[i].id, err);
           }
@@ -407,15 +408,18 @@ class PokerGame {
   async endGame(io, room) {
     this.gameOver = true;
     io.to(room).emit('gameEnded', { message: 'Game over! Thank you for playing!' });
-    console.log("after conplete the game ")
-    await this.resetGame(io, room)
+    console.log("after completing the game");
+    setTimeout(async () => {
+      await this.resetGame(io, room);
+    }, 30000);
   }
+
   getActivePlayers() {
     return this.activePlayers;
   }
 }
 async function waitForPlayerActionOrTimeout(currentPlayer, io) {
-  const timeout = 10000;
+  const timeout = 5000;
   return new Promise((resolve, reject) => {
     let timeoutId = setTimeout(() => {
       io.to(currentPlayer.id).emit('blindTrnWithOutAction', { data: currentPlayer.socket.id });

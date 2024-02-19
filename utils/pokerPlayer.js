@@ -1,6 +1,7 @@
 class PokerPlayer {
     constructor(id, playerId, gameId, chips = 0, cards = []) {
         this.id = id;
+        this.playerIndex = null
         this.status = 0
         this.playerId = playerId;
         this.gameId = gameId;

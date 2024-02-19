@@ -21,7 +21,6 @@ function handleSocket(server) {
                 const numPlayers = room.players.length;
                 console.log(numPlayers);
                 if (numPlayers > 6) {
-
                     await io.to(socket.id).emit('game-message', "Wait until a seat becomes available");
                     return;
                 }
@@ -31,6 +30,8 @@ function handleSocket(server) {
                 socket.join(tableId, () => {
                     socket.tableId = tableId;
                 });
+                socket.tableId = tableId;
+                console.log(" socket is ", socket)
                 socket.player = player;
                 const roomSockets = io.sockets.adapter.rooms.get(tableId);
                 console.log(`Received data: ${playerId} joined ${tableId} with ${chips} chips`);
@@ -54,10 +55,12 @@ function handleSocket(server) {
                         room.creatingGame = false;
                     }
                 } else {
-                    await io.to(socket.id).emit('game-message', "Wait for a new player to join the game");
+                    const playerMessage = room.players.length >= 2
+                        ? "Wait for the game to complete"
+                        : "Wait for a new player to join the game";
+                    await io.to(socket.id).emit('game-message', playerMessage);
                     return;
                 }
-
             } catch (error) {
                 console.error('Error in gameJoin:', error);
                 console.error(error.stack);
@@ -74,7 +77,8 @@ function handleSocket(server) {
             if (index !== -1) {
                 room.players.splice(index, 1);
                 if (room.pokerGame) {
-                    room.pokerGame.handlePlayerDisconnection(socket.id);
+                    const activePlayers = room.pokerGame.getActivePlayers()
+                    console.log(activePlayers)
                 }
             }
         });
