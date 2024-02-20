@@ -15,6 +15,8 @@
                               "action":"call",
                                "chips" :50
                                 }
+
+   Note: If player wants to choose total chips then change action name "Bet" to "allIn"
 ]
 **`cards`** - Client receive 2 cards with value and suit type
 **`blindName`** - Client receive blind name like [D,SB.BB]

@@ -4,7 +4,7 @@ const { createUser, listUsers, getUserById, updateUser, deleteUser } = require('
 const { createPokerGame, getPokerGameById } = require('../controller/pokerGameController');
 const { createPokerContest, getAllcontest } = require('../controller/pokerContextcontroller');
 const { createPokerTable } = require('../controller/pokerTablesController');
-const { createPokerPlayerRoom,getAllPlayersInRoomId ,getAvgStackSize} = require('../controller/pokerPlayerRoomController');
+const { createPokerPlayerRoom, getAllPlayersInRoomId, getAvgStackSize } = require('../controller/pokerPlayerRoomController');
 // routes for users
 router.post('/createplayer', createUser);
 router.get('/userList', listUsers);
