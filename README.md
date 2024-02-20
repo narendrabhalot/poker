@@ -5,7 +5,7 @@
 - Suits - `['Hearts', 'Diamonds', 'Clubs', 'Spades']`
 - Type -`[]` - represents `List|Array`
 - As per below table
-**` client listener  events`** - [cards,blindName,displayPlayerOptions,bigblindTrnWithOutAction,flopCards,turnCards,riverCards,winner,winnerAmount,room message,disconnect,]
+**` client listener  events`** - [cards,blindName,displayPlayerOptions,blindTrnWithOutAction,flopCards,turnCards,riverCards,winner,winnerAmount,room message,disconnect,gameEnded,game message ]
 
 
 
