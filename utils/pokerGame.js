@@ -165,6 +165,7 @@ class PokerGame {
       this.previousPlayer = this.currentPlayer;
       this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
       this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
+
       // console.log("this.currentPlayer  before the while loop ", this.currentPlayer)
       this.minBet = bigBlindAmount
       this.currentBet = bigBlindAmount
@@ -173,7 +174,7 @@ class PokerGame {
       while (this.status !== 'ended' && this.activePlayers.length > 1) {
         try {
           console.log("inside the while loop ")
-          await this.displayPlayerOptions(io, this.currentPlayer);
+          await this.displayPlayerOptions(io, this.currentPlayer, tableId);
           console.log("the pot amount is ", this.pot)
           let action = await waitForPlayerActionOrTimeout(this.currentPlayer, io, tableId);
           this.currentBet = action.chips
@@ -185,10 +186,12 @@ class PokerGame {
             this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
           }
           await this.handlePlayerAction(this.currentPlayer, action);
+          await io.to(tableId).emit('player-action', { player: this.currentPlayer.playerId, action: action });
           console.log("the pot amount is ", this.pot)
           this.previousPlayer = this.currentPlayer;
           this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
           this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
+
 
           // console.log("this.currentPlayer", this.currentPlayer)
         } catch (err) {
@@ -215,7 +218,7 @@ class PokerGame {
       await io.to(tableId).emit('flopCards', flopCards);
       await this.flopCardBattingRound(io, tableId)
     } catch (err) {
-      console.error('Error starting Flop round:', err);
+      console.error('Erjjjror starting Flop round:', err);
     }
   }
   async startTurnRound(io, tableId) {
@@ -253,6 +256,7 @@ class PokerGame {
     try {
       this.currentPlayerIndex = this.smallBlindPosition
       this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
+
       while (this.status !== 'ended' && this.numberOfPlayers > 1) {
         try {
           console.log("this.maxBet == this.currentPlayer.totalChips", this.maxBet, this.currentPlayer.totalChips, this.minBet)
@@ -303,7 +307,7 @@ class PokerGame {
       this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
       while (this.status !== 'ended' && this.activePlayers.length > 1) {
         try {
-          await this.displayPlayerOptions(io, this.currentPlayer);
+          await this.displayPlayerOptions(io, this.currentPlayer, tableId);
           let action = await waitForPlayerActionOrTimeout(this.currentPlayer, io, tableId);
           await this.handlePlayerAction(this.currentPlayer, action);
           console.log("the pot amount is ", this.pot)
@@ -325,9 +329,10 @@ class PokerGame {
       console.error('Error during river betting round:', err);
     }
   }
-  async displayPlayerOptions(io, currentPlayer) {
+  async displayPlayerOptions(io, currentPlayer, tableId) {
     try {
-      console.log("this.currentPlayer inside the displayPlayervOtion  ", this.currentPlayer, this.minBet, this.maxBet)
+      await io.to(tableId).emit('turn-player', { player: currentPlayer.playerId });
+      // console.log("this.currentPlayer inside the displayPlayervOtion  ", this.currentPlayer, this.minBet, this.maxBet)
       const { chips: betChips, totalChips } = currentPlayer;
       const maxbet = this.maxBet;
       let callChip = totalChips > 0 ? this.maxBet - Number(totalChips) : this.minBet - Number(totalChips)
@@ -335,7 +340,7 @@ class PokerGame {
       if (betChips <= callChips) {
         await io.to(currentPlayer.id).emit('displayPlayerOptions', {
           detail: {
-            action: ["allIn"],
+            action: ["allIn", "fold"],
             betChipsRange: betChips
           }
         });
@@ -455,19 +460,19 @@ class PokerGame {
   }
 }
 async function waitForPlayerActionOrTimeout(currentPlayer, io, tableId) {
-  const timeout = 50000;
-  let remainingTime = timeout;
-  let playerActionOccurred = false; // Flag to track if player action occurred
+  const timeoutSeconds = 50; // Timeout in seconds
+  let remainingTime = timeoutSeconds * 1000; // Convert seconds to milliseconds
+  let playerActionOccurred = false;
 
-  io.to(tableId).emit('countdown', { remainingTime });
+  io.to(tableId).emit('countdown', { remainingTime: remainingTime / 1000 }); // Emit countdown time in seconds
 
   return new Promise((resolve, reject) => {
     const countdownInterval = setInterval(() => {
       remainingTime -= 1000;
-      io.to(tableId).emit('countdown', { remainingTime });
+      io.to(tableId).emit('countdown', { remainingTime: remainingTime / 1000 }); // Emit updated countdown time in seconds
       if (remainingTime <= 0) {
         clearInterval(countdownInterval);
-        if (!playerActionOccurred) { // Emit event if player action hasn't occurred
+        if (!playerActionOccurred) {
           io.to(tableId).emit('blindTrnWithOutAction', { data: currentPlayer.socket.id });
           resolve({ action: 'fold', chips: 0 });
         }
@@ -475,21 +480,20 @@ async function waitForPlayerActionOrTimeout(currentPlayer, io, tableId) {
     }, 1000);
 
     currentPlayer.socket.on('playerAction', (data) => {
-      playerActionOccurred = true; // Set flag to true
+      playerActionOccurred = true;
       clearInterval(countdownInterval);
       resolve(data);
     });
 
     currentPlayer.socket.once('disconnect', () => {
       clearInterval(countdownInterval);
-      if (!playerActionOccurred) { // Emit event if player action hasn't occurred
+      if (!playerActionOccurred) {
         io.to(tableId).emit('blindTrnWithOutAction', { data: currentPlayer.socket.id });
         reject();
       }
     });
   });
 }
-
 
 
 
