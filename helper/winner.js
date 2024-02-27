@@ -1,5 +1,7 @@
 
 function mergeHandwithCommunityCard(players, communityCard) {
+
+    
     try {
         let AllbestCardofEachPlayer = [];
         let winnerHand = []

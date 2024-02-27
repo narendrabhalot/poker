@@ -3,16 +3,13 @@ const pokerModel = require('../models/pokerGameModel');
 const createPokerGame = async (req, res) => {
     try {
         const { name, type, countries, chips, noOfPlayer } = req.body;
-
-        console.log('Received data:', req.body); 
-    
+        console.log('Received data:', req.body);
         const newGame = new pokerModel({
             name, type, countries, chips, noOfPlayer
         });
-
         // Save the game to the database
         await newGame.save();
-        res.status(201).json({status:true, message: 'poker game created successfully', game: newGame });
+        res.status(201).json({ status: true, message: 'poker game created successfully', game: newGame });
     } catch (err) {
         console.error('Error:', err); // Log any caught error
         res.status(500).json({ error: 'Internal server error' });
@@ -99,4 +96,4 @@ const getPokerGameById = async (req, res) => {
 
 
 
-module.exports={createPokerGame,getPokerGameById}
+module.exports = { createPokerGame, getPokerGameById }

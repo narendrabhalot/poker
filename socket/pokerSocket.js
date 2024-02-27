@@ -14,10 +14,9 @@ function handleSocket(server) {
                 }
                 let room = rooms.get(tableId);
                 if (!room) {
-                    room = { players: [], pokerGame: null, creatingGame: false };
+                    room = { players: [], pokerGame: null };
                     rooms.set(tableId, room);
                 }
-                console.log("rooms is", rooms);
                 const numPlayers = room.players.length;
                 console.log(numPlayers);
                 if (numPlayers > 6) {
@@ -71,6 +70,7 @@ function handleSocket(server) {
         });
         socket.on('disconnect', () => {
             console.log('A user disconnected');
+            io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
             const tableId = socket.tableId;
             if (!tableId) return;
             const room = rooms.get(tableId);
@@ -80,16 +80,15 @@ function handleSocket(server) {
                 room.players.splice(index, 1);
                 if (room.pokerGame) {
                     const activePlayers = room.pokerGame.getActivePlayers()
+                    let totalPlayer = room.pokerGame.getNumberOfPlayers()
+                    totalPlayer -= 1
+                    room.pokerGame.setNumberOfPlayers(totalPlayer)
                     const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
                     activePlayers.splice(disConnectActiveIndex, 1)
-                    console.log(activePlayers)
+                    console.log("active player after the disconect ", activePlayers)
                 }
             }
         });
     });
-    function getRooms() {
-        return rooms;
-    }
 }
-
 module.exports = handleSocket;
