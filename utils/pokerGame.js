@@ -37,11 +37,7 @@ class PokerGame {
     try {
       await this.emitCardsAndPositions(io, tableId);
       await this.emitPositions(io, tableId);
-      // console.log(' before the start batting round player ', this.activePlayers)
-      // console.log(' before the start batting round  a ctive  player ', this.activePlayers)
       await this.startBettingRound(io, tableId, smallBlindAmount, bigBlindAmount);
-      // console.log(' after the start batting round player ', this.activePlayers)
-      // console.log(' afterthe start batting round  active player ', this.activePlayers)
       console.log('Game has completed the first round.');
       await this.startFlopRound(io, tableId);
       console.log("start round player", this.activePlayers)
@@ -217,7 +213,7 @@ class PokerGame {
       this.communityCard = this.communityCard.concat(flopCards)
       console.log("flopCards", flopCards)
       await io.to(tableId).emit('flopCards', flopCards);
-      await this.flopCardBattingRound(io)
+      await this.flopCardBattingRound(io, tableId)
     } catch (err) {
       console.error('Error starting Flop round:', err);
     }
@@ -228,7 +224,7 @@ class PokerGame {
       this.communityCard = this.communityCard.concat(turnCard)
       console.log("turnCards", turnCard)
       await io.to(tableId).emit('turnCards', turnCard);
-      await this.flopCardBattingRound(io)
+      await this.flopCardBattingRound(io, tableId)
     } catch (err) {
       console.error('Error starting turn  round:', err);
     }
@@ -239,7 +235,7 @@ class PokerGame {
       this.communityCard = this.communityCard.concat(riverCards)
       console.log("riverCards", riverCards)
       await io.to(tableId).emit('riverCards', riverCards);
-      await this.flopCardBattingRound(io)
+      await this.flopCardBattingRound(io, tableId)
 
     } catch (err) {
       console.error('Error starting river round:', err);
@@ -253,7 +249,7 @@ class PokerGame {
     await io.to(tableId).emit('winner', winner);
     await io.to(winner.winnerId).emit('winnerAmount', filterWinner[0].chips)
   }
-  async flopCardBattingRound(io) {
+  async flopCardBattingRound(io, tableId) {
     try {
       this.currentPlayerIndex = this.smallBlindPosition
       this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
@@ -281,16 +277,18 @@ class PokerGame {
         } catch (err) {
           console.error('Error handling in next player:', err);
         }
-        if (this.activePlayers.length <= 1 || this.maxBet == this.currentPlayer.totalChips) {
+        if (this.numberOfPlayers <= 1 || this.maxBet == this.currentPlayer.totalChips) {
           if (this.currentPlayerIndex == this.smallBlindPosition) {
             this.activePlayers.forEach(player => {
               player.totalChips = 0;
+              this.minBet = 1
             })
             break;
           } else if (this.maxBet > 0) {
             this.activePlayers.forEach(player => { player.totalChips = 0 });
             this.currentBet = 0
             this.maxBet = 0
+            this.minBet = 1
             break;
           }
         }
@@ -459,25 +457,35 @@ class PokerGame {
 async function waitForPlayerActionOrTimeout(currentPlayer, io, tableId) {
   const timeout = 50000;
   let remainingTime = timeout;
+  let playerActionOccurred = false; // Flag to track if player action occurred
+
   io.to(tableId).emit('countdown', { remainingTime });
+
   return new Promise((resolve, reject) => {
     const countdownInterval = setInterval(() => {
       remainingTime -= 1000;
       io.to(tableId).emit('countdown', { remainingTime });
       if (remainingTime <= 0) {
         clearInterval(countdownInterval);
-        io.to(tableId).emit('blindTrnWithOutAction', { data: currentPlayer.socket.id });
-        resolve({ action: 'fold', chips: 0 });
+        if (!playerActionOccurred) { // Emit event if player action hasn't occurred
+          io.to(tableId).emit('blindTrnWithOutAction', { data: currentPlayer.socket.id });
+          resolve({ action: 'fold', chips: 0 });
+        }
       }
     }, 1000);
-    currentPlayer.socket.once('playerAction', (data) => {
+
+    currentPlayer.socket.on('playerAction', (data) => {
+      playerActionOccurred = true; // Set flag to true
       clearInterval(countdownInterval);
-      io.to(tableId).emit('blindTrnWithOutAction', { data: currentPlayer.socket.id });
       resolve(data);
     });
+
     currentPlayer.socket.once('disconnect', () => {
       clearInterval(countdownInterval);
-      reject();
+      if (!playerActionOccurred) { // Emit event if player action hasn't occurred
+        io.to(tableId).emit('blindTrnWithOutAction', { data: currentPlayer.socket.id });
+        reject();
+      }
     });
   });
 }
