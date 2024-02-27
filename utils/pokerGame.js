@@ -36,17 +36,17 @@ class PokerGame {
   async startGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount) {
     try {
       await this.emitCardsAndPositions(io, tableId);
-      await this.emitPositions(io, tableId);
+      await this.emitPositions(io, tableId)
       await this.startBettingRound(io, tableId, smallBlindAmount, bigBlindAmount);
       console.log('Game has completed the first round.');
       await this.startFlopRound(io, tableId);
-      console.log("start round player", this.activePlayers)
+      console.log("start round player", this.activePlayers);
       console.log('Game has completed the flop round');
-      await this.startTurnRound(io, tableId)
+      await this.startTurnRound(io, tableId);
       console.log('Game has completed the turn round');
-      await this.startRiverRound(io, tableId)
+      await this.startRiverRound(io, tableId);
       console.log('Game has completed the river round');
-      await this.declareWinner(io, tableId)
+      await this.declareWinner(io, tableId);
     } catch (err) {
       console.error('Error occurred:', err);
     } finally {
@@ -54,6 +54,7 @@ class PokerGame {
       await this.endGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount);
     }
   }
+
   initializeDeck() {
     const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
     const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -77,12 +78,14 @@ class PokerGame {
     }
   }
   async resetGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount) {
+    let playerName = []
     for (const [index, player] of this.players.entries()) {
       if (player.chips == 0) {
         await io.to(player.id).emit('player-message', " you need to add more chips to the table in order to continue ");
         this.players.splice(index, 1)
         continue;
       }
+      playerName.push({ playerId: player.playerId, PlayerName: player.PlayerName, chips: player.chips })
       player.status = 0
       player.totalChips = 0
       player.folded = false;
@@ -109,6 +112,7 @@ class PokerGame {
     this.RoundNumber = 0
     this.status = 'started';
     this.firstRoundCompleted = false;
+    await io.to(tableId).emit("playerName", playerName)
     this.communityCard = []
     this.initializeGame();
     this.startGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount)
@@ -186,7 +190,9 @@ class PokerGame {
             this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
           }
           await this.handlePlayerAction(this.currentPlayer, action);
-          await io.to(tableId).emit('player-action', { player: this.currentPlayer.playerId, action: action });
+          await io.to(tableId).emit('player-action', { player: this.currentPlayer.playerId, action: action, chips: this.currentPlayer.chips });
+          await io.to(tableId).emit('pot-amount', { potAmount: this.pot });
+
           console.log("the pot amount is ", this.pot)
           this.previousPlayer = this.currentPlayer;
           this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
@@ -271,6 +277,8 @@ class PokerGame {
             this.maxBet = action.chips
           }
           await this.handlePlayerAction(this.currentPlayer, action);
+          await io.to(tableId).emit('player-action', { player: this.currentPlayer.playerId, action: action, chips: this.currentPlayer.chips });
+          await io.to(tableId).emit('pot-amount', { potAmount: this.pot });
           this.previousPlayer = this.currentPlayer;
           this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
           this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
@@ -310,6 +318,8 @@ class PokerGame {
           await this.displayPlayerOptions(io, this.currentPlayer, tableId);
           let action = await waitForPlayerActionOrTimeout(this.currentPlayer, io, tableId);
           await this.handlePlayerAction(this.currentPlayer, action);
+          await io.to(tableId).emit('player-action', { player: this.currentPlayer.playerId, action: action, chips: this.currentPlayer.chips });
+          await io.to(tableId).emit('pot-amount', { potAmount: this.pot });
           console.log("the pot amount is ", this.pot)
           this.previousPlayer = this.currentPlayer;
           this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
@@ -331,7 +341,7 @@ class PokerGame {
   }
   async displayPlayerOptions(io, currentPlayer, tableId) {
     try {
-      await io.to(tableId).emit('turn-player', { player: currentPlayer.playerId });
+      await io.to(tableId).emit('turn-playerName', { playerId: currentPlayer.playerId, PlayerName: currentPlayer.playerName });
       // console.log("this.currentPlayer inside the displayPlayervOtion  ", this.currentPlayer, this.minBet, this.maxBet)
       const { chips: betChips, totalChips } = currentPlayer;
       const maxbet = this.maxBet;

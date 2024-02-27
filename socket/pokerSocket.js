@@ -7,10 +7,11 @@ function handleSocket(server) {
     const rooms = new Map();
     io.on('connection', (socket) => {
         console.log('User is connected');
-        socket.on('gameJoin', async (playerId, tableId, chips, contestId, smallBlindAmount, bigBlindAmount) => {
+        socket.on('gameJoin', async (playerId, tableId, chips, contestId, smallBlindAmount, bigBlindAmount, playerName) => {
             try {
-                if (!playerId || !tableId || isNaN(chips) || chips <= 0 || !contestId) {
-                    throw new Error('Invalid playerId, tableId, contestId or chips');
+                if (!playerId || !tableId || isNaN(chips) || chips <= 0 || !contestId || !playerName) {
+                    throw new Error('Invalid playerId, playerName,tableId, contestId or chips');
+
                 }
                 let room = rooms.get(tableId);
                 if (!room) {
@@ -23,7 +24,7 @@ function handleSocket(server) {
                     await io.to(socket.id).emit('game-message', "Wait until a seat becomes available");
                     return;
                 }
-                const player = new PokerPlayer(socket.id, playerId, tableId, chips);
+                const player = new PokerPlayer(socket.id, playerId, playerName, tableId, chips);
                 player.socket = socket;
                 room.players.push(player);
                 socket.join(tableId, () => {
@@ -38,7 +39,9 @@ function handleSocket(server) {
                     playerCount: roomSockets ? roomSockets.size : 0,
                     message: `${playerId} joined ${tableId} with ${chips} chips`,
                     id: socket.id,
-                    userId: socket.playerId
+                    playerId: playerId,
+                    playerName: playerName,
+                    chips: chips
                 });
                 room = rooms.get(tableId);
                 const reqParameter = { playerId, chips, roomId: tableId, contestId };
@@ -48,7 +51,6 @@ function handleSocket(server) {
                 if (room.players.length >= 2 && room.pokerGame == null) {
                     try {
                         rooms.get(tableId).pokerGame = new PokerGame(room.players, tableId, 2);
-                        console.log(rooms.get(tableId).pokerGame);
                         rooms.get(tableId).pokerGame.startGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount);
                     } catch (error) {
                         console.error('Error starting game:', error);
