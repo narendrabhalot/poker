@@ -457,7 +457,7 @@ class PokerGame {
   }
 }
 async function waitForPlayerActionOrTimeout(currentPlayer, io, tableId) {
-  const timeout = 15000;
+  const timeout = 50000;
   let remainingTime = timeout;
   io.to(tableId).emit('countdown', { remainingTime });
   return new Promise((resolve, reject) => {
