@@ -62,7 +62,6 @@ function handleSocket(server) {
                         ? "Wait for the game to complete"
                         : "Wait for a new player to join the game";
                     await io.to(socket.id).emit('game-message', playerMessage);
-                    return;
                 }
             } catch (error) {
                 console.error('Error in gameJoin:', error);

@@ -1,6 +1,4 @@
 
-
-
 const removePlayer = (players, index) => {
     let lastIndex = players.length - 1;
     [players[index], players[lastIndex]] = [players[lastIndex], players[index]];
@@ -11,5 +9,4 @@ const removePlayer = (players, index) => {
 }
 
 module.exports = { removePlayer };
-
 
