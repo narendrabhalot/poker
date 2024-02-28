@@ -1,4 +1,3 @@
-
 const winners = require('../helper/winner')
 const { removePlayer } = require('../helper/helperFunctions')
 class PokerGame {
@@ -54,7 +53,6 @@ class PokerGame {
       await this.endGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount);
     }
   }
-
   initializeDeck() {
     const suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'];
     const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -212,58 +210,58 @@ class PokerGame {
     }
   }
   async startFlopRound(io, tableId) {
-    try {
-      const flopCards = this.deck.splice(-3);
-      this.communityCard = this.communityCard.concat(flopCards)
-      console.log("flopCards", flopCards)
-      await io.to(tableId).emit('flopCards', flopCards);
-      setTimeout(async () => {
-        try {
-          await this.flopCardBattingRound(io, tableId)
-        } catch (error) {
-          console.error("Error resetting game:", error);
-        }
-      }, 2000);
-
-    } catch (err) {
-      console.error('Erjjjror starting Flop round:', err);
-    }
+    return new Promise((resolve, reject) => {
+      try {
+        const flopCards = this.deck.splice(-3);
+        this.communityCard = this.communityCard.concat(flopCards)
+        console.log("flopCards", flopCards)
+        io.to(tableId).emit('flopCards', flopCards);
+        setTimeout(async () => {
+          await this.flopCardBattingRound(io, tableId);
+          resolve(); // Resolve the promise after the flop round is completed
+        }, 5000);
+      } catch (err) {
+        console.error('Error starting Flop round:', err);
+        reject(err);
+      }
+    });
   }
-  async startTurnRound(io, tableId) {
-    try {
-      const turnCard = this.deck.splice(-1);
-      this.communityCard = this.communityCard.concat(turnCard)
-      console.log("turnCards", turnCard)
-      await io.to(tableId).emit('turnCards', turnCard);
-      setTimeout(async () => {
-        try {
-          await this.flopCardBattingRound(io, tableId)
-        } catch (error) {
-          console.error("Error resetting game:", error);
-        }
-      }, 2000);
 
-    } catch (err) {
-      console.error('Error starting turn  round:', err);
-    }
+  async startTurnRound(io, tableId) {
+
+    return new Promise((resolve, reject) => {
+      try {
+        const turnCard = this.deck.splice(-1);
+        this.communityCard = this.communityCard.concat(turnCard)
+        console.log("turnCards", turnCard)
+        io.to(tableId).emit('turnCards', turnCard);
+        setTimeout(async () => {
+          await this.flopCardBattingRound(io, tableId);
+          resolve();
+        }, 5000);
+      } catch (err) {
+        console.error('Error starting Flop round:', err);
+        reject(err);
+      }
+    });
   }
   async startRiverRound(io, tableId) {
-    try {
-      const riverCards = this.deck.splice(-1);
-      this.communityCard = this.communityCard.concat(riverCards)
-      console.log("riverCards", riverCards)
-      await io.to(tableId).emit('riverCards', riverCards);
-      setTimeout(async () => {
-        try {
-          await this.flopCardBattingRound(io, tableId)
-        } catch (error) {
-          console.error("Error resetting game:", error);
-        }
-      }, 2000);
 
-    } catch (err) {
-      console.error('Error starting river round:', err);
-    }
+    return new Promise((resolve, reject) => {
+      try {
+        const riverCards = this.deck.splice(-1);
+        this.communityCard = this.communityCard.concat(riverCards)
+        console.log("riverCards", riverCards)
+        io.to(tableId).emit('riverCards', riverCards);
+        setTimeout(async () => {
+          await this.flopCardBattingRound(io, tableId);
+          resolve();
+        }, 5000);
+      } catch (err) {
+        console.error('Error starting Flop round:', err);
+        reject(err);
+      }
+    });
   }
   async declareWinner(io, tableId) {
     const winner = winners.mergeHandwithCommunityCard(this.activePlayers, this.communityCard)
@@ -324,7 +322,6 @@ class PokerGame {
       console.error('Error during flop betting round:', err);
     }
   }
-
   async displayPlayerOptions(io, currentPlayer, tableId) {
     try {
       await io.to(tableId).emit('turn-playerName', { playerId: currentPlayer.playerId, PlayerName: currentPlayer.playerName });
