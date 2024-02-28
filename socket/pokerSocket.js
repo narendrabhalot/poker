@@ -11,7 +11,6 @@ function handleSocket(server) {
             try {
                 if (!playerId || !tableId || isNaN(chips) || chips <= 0 || !contestId || !playerName) {
                     throw new Error('Invalid playerId, playerName,tableId, contestId or chips');
-
                 }
                 let room = rooms.get(tableId);
                 if (!room) {

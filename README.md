@@ -5,7 +5,7 @@
 - Suits - `['Hearts', 'Diamonds', 'Clubs', 'Spades']`
 - Type -`[]` - represents `List|Array`
 - As per below table
-**` client listener  events`** -[cards,blindName,displayPlayerOptions,blindTrnWithOutAction,flopCards,turnCards,riverCards,winner,winnerAmount,disconnect,gameEnded,game-message,
+**` client listener  events`** -[cards,blindName,flopCards,turnCards,riverCards,displayPlayerOptions,blindTrnWithOutAction,gameEnded,winner,winnerAmount,disconnect,game-message,room message
 pot-amount,playerNames,turn-player ,player-action,countdown,player-message]
 **` client emiting   events`** [
     1.  gameJoin(with  7 argument):- playerId, tableId, chips, contestId, smallBlindAmount, bigBlindAmount, playerName
@@ -25,11 +25,11 @@ pot-amount,playerNames,turn-player ,player-action,countdown,player-message]
 **`riverCards`** - after completing turn round round open 1 card on desk
 **`winner`** - after completing river round  , get winner in room 
 **`winnerAmount`** - get winner amount  in room 
-**`room message`** - get winner amount  in room 
-**`gameEnded`** - get winner amount  in room 
-**`game-message`** - get winner amount  in room 
-**`pot-amount`** - get winner amount  in room 
-**`playerNames`** - get winner amount  in room 
+**`room message`** - get message if new player join the game 
+**`gameEnded`** - after complete the game 
+**`game-message`** - message for player for waiting 
+**`pot-amount`** - get a updated pot amount 
+**`playerNames`** - get all player name after reset the game 
 **`turn-player`** - get winner amount  in room 
 **`player-action`** -After hitting any action like "Call", get playerName, current chips in a room
 **`countdown`** - Get time remaining for current player action
