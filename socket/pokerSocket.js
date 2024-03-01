@@ -49,7 +49,7 @@ function handleSocket(server) {
                 console.log("room.pokerGame", room.pokerGame)
                 if (room.players.length >= 2 && room.pokerGame == null) {
                     try {
-                        rooms.get(tableId).pokerGame = new PokerGame(room.players, tableId, 2);
+                        rooms.get(tableId).pokerGame = new PokerGame(room.players, tableId, bigBlindAmount, 2);
                         rooms.get(tableId).pokerGame.startGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount);
                     } catch (error) {
                         console.error('Error starting game:', error);
