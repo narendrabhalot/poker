@@ -170,7 +170,6 @@ class PokerGame {
       this.minBet = bigBlindAmount
       this.currentBet = bigBlindAmount
       this.maxBet = bigBlindAmount
-
       while (this.status !== 'ended' && this.activePlayers.length > 1) {
         try {
           console.log("inside the while loop ")
@@ -181,13 +180,9 @@ class PokerGame {
           if (this.maxBet < action.chips) {
             this.maxBet = action.chips
           }
-
           await this.handlePlayerAction(this.currentPlayer, action);
-
           await io.to(tableId).emit('player-action', { player: this.currentPlayer.playerId, action: action, chips: this.currentPlayer.chips });
           await io.to(tableId).emit('pot-amount', { potAmount: this.pot });
-
-
           this.previousPlayer = this.currentPlayer;
           this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
           this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
@@ -224,7 +219,6 @@ class PokerGame {
       }
     });
   }
-
   async startTurnRound(io, tableId, bigBlindAmount) {
 
     return new Promise((resolve, reject) => {
@@ -357,10 +351,8 @@ class PokerGame {
     try {
       const { action, chips } = actionData;
       const normalizedChips = Number(chips);
-
       this.pot += normalizedChips
       console.log(normalizedChips)
-
       console.log("this .currentBet is ", this.currentBet)
       console.log("current player detail before anu apdation ", this.activePlayers[this.currentPlayerIndex])
       switch (action) {
@@ -378,7 +370,6 @@ class PokerGame {
           player.action = action;
           this.activePlayers[this.currentPlayerIndex].totalChips += chips
           this.activePlayers[this.currentPlayerIndex].chips -= chips
-
           console.log(" this.activePlayers[this.currentPlayerIndex]    player chips after the allin is a ", this.activePlayers[this.currentPlayerIndex])
           break;
         default:
@@ -389,14 +380,11 @@ class PokerGame {
     }
   }
   handleBet(chips) {
-
-
     this.currentBet = chips
     this.activePlayers[this.currentPlayerIndex].chips -= chips
     this.activePlayers[this.currentPlayerIndex].totalChips += chips
     this.maxBet = this.activePlayers[this.currentPlayerIndex].totalChips
     this.activePlayers[this.currentPlayerIndex].action = 'bet';
-
   }
   handleCall(chips) {
     this.activePlayers[this.currentPlayerIndex].chips -= chips
