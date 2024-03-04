@@ -157,13 +157,13 @@ class PokerGame {
   }
   async startBettingRound(io, tableId, smallBlindAmount, bigBlindAmount) {
     try {
-      await this.deductChips(this.currentPlayer, smallBlindAmount)
+      await this.deductChips(this.currentPlayer, smallBlindAmount, tableId, io)
       this.maxBet = smallBlindAmount
       this.minBet = smallBlindAmount
       this.previousPlayer = this.currentPlayer;
       this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
       this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
-      await this.deductChips(this.currentPlayer, bigBlindAmount)
+      await this.deductChips(this.currentPlayer, bigBlindAmount, tableId, io)
       this.previousPlayer = this.currentPlayer;
       this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
       this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
@@ -212,7 +212,7 @@ class PokerGame {
         setTimeout(async () => {
           await this.flopCardBattingRound(io, tableId, bigBlindAmount);
           resolve(); // Resolve the promise after the flop round is completed
-        }, 5000);
+        }, 2000);
       } catch (err) {
         console.error('Error starting Flop round:', err);
         reject(err);
@@ -230,7 +230,7 @@ class PokerGame {
         setTimeout(async () => {
           await this.flopCardBattingRound(io, tableId, bigBlindAmount);
           resolve();
-        }, 5000);
+        }, 2000);
       } catch (err) {
         console.error('Error starting Flop round:', err);
         reject(err);
@@ -248,7 +248,7 @@ class PokerGame {
         setTimeout(async () => {
           await this.flopCardBattingRound(io, tableId, bigBlindAmount);
           resolve();
-        }, 5000);
+        }, 2000);
       } catch (err) {
         console.error('Error starting Flop round:', err);
         reject(err);
@@ -395,14 +395,38 @@ class PokerGame {
     removePlayer(this.activePlayers, index)
     this.numberOfPlayers -= 1
   }
-  async deductChips(player, chips) {
-    chips = Number(chips)
-    if (player.chips >= chips) {
-      this.activePlayers[this.currentPlayerIndex].chips -= chips
-      this.activePlayers[this.currentPlayerIndex].totalChips += chips
-      this.pot += chips;
+  async deductChips(player, chips, tableId, io) {
+    try {
+
+      if (!player || isNaN(chips) || chips <= 0 || !tableId || !io) {
+        throw new Error('Invalid input');
+      }
+      chips = Number(chips);
+
+      if (player.chips >= chips) {
+
+        this.activePlayers[this.currentPlayerIndex].chips -= chips;
+        this.activePlayers[this.currentPlayerIndex].totalChips += chips;
+        this.pot += chips;
+
+
+        await io.to(tableId).emit('pot-amount', { potAmount: this.pot });
+        await io.to(tableId).emit('playerChips', {
+          currentPlayerChips: this.activePlayers[this.currentPlayerIndex].chips,
+          playerId: player.id,
+          playerName: player.playerName
+        });
+      } else {
+        throw new Error('Insufficient chips');
+      }
+    } catch (error) {
+      console.error('Error deducting chips:', error);
+      // Handle error, perhaps emit an error event or send an error response
+      // For example:
+      // await io.to(tableId).emit('error', { message: error.message });
     }
   }
+
   async endGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount) {
     try {
       this.gameOver = true;
