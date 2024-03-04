@@ -75,6 +75,7 @@ class PokerGame {
       }
     }
   }
+
   async resetGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount) {
     let playerName = []
     for (const [index, player] of this.players.entries()) {
@@ -259,7 +260,6 @@ class PokerGame {
     const winner = winners.mergeHandwithCommunityCard(this.activePlayers, this.communityCard)
     let filterWinner = this.activePlayers.filter(data => data.id == winner.winnerId)
     filterWinner[0].chips += this.pot
-
     await io.to(tableId).emit('winner', { winner: winner, winnerId: filterWinner[0].id, winnerName: filterWinner[0].playerName, winningChips: this.pot });
     await io.to(tableId).emit('winnerAmount', filterWinner[0].chips)
     this.pot = 0
@@ -403,14 +403,10 @@ class PokerGame {
         throw new Error('Invalid input');
       }
       chips = Number(chips);
-
       if (player.chips >= chips) {
-
         this.activePlayers[this.currentPlayerIndex].chips -= chips;
         this.activePlayers[this.currentPlayerIndex].totalChips += chips;
         this.pot += chips;
-
-
         await io.to(tableId).emit('pot-amount', { potAmount: this.pot });
         await io.to(tableId).emit('playerChips', {
           currentPlayerChips: this.activePlayers[this.currentPlayerIndex].chips,
@@ -422,17 +418,14 @@ class PokerGame {
       }
     } catch (error) {
       console.error('Error deducting chips:', error);
-      // Handle error, perhaps emit an error event or send an error response
-      // For example:
-      // await io.to(tableId).emit('error', { message: error.message });
+
     }
   }
-
   async endGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount) {
     try {
       this.gameOver = true;
       io.to(tableId).emit('gameEnded', { message: 'Game over! Thank you for playing!' });
-      if (this.players.length === 1) {
+      if (rooms.get(tableId).players.length === 1) {
         try {
           await io.to(this.players[0].id).emit('room message', "Please wait for a new player to join the game ");
         } catch (error) {
