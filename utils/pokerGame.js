@@ -259,9 +259,10 @@ class PokerGame {
     const winner = winners.mergeHandwithCommunityCard(this.activePlayers, this.communityCard)
     let filterWinner = this.activePlayers.filter(data => data.id == winner.winnerId)
     filterWinner[0].chips += this.pot
+
+    await io.to(tableId).emit('winner', { winner: winner, winnerId: filterWinner[0].id, winnerName: filterWinner[0].playerName, winningChips: this.pot });
+    await io.to(tableId).emit('winnerAmount', filterWinner[0].chips)
     this.pot = 0
-    await io.to(tableId).emit('winner', winner);
-    await io.to(winner.winnerId).emit('winnerAmount', filterWinner[0].chips)
   }
   async flopCardBattingRound(io, tableId, bigBlindAmount) {
     try {
