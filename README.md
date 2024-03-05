@@ -6,7 +6,7 @@
 - Type -`[]` - represents `List|Array`
 - As per below table
 **` client listener  events`** -[cards,blindName,flopCards,turnCards,riverCards,displayPlayerOptions,blindTrnWithOutAction,gameEnded,winner,winnerAmount,disconnect,game-message,room message
-pot-amount,playerNames,turn-player ,player-action,countdown,player-message,playerChips]
+pot-amount,playerNames,turn-player ,player-action,countdown,player-message,playerChips,communityCard]
 **` client emiting   events`** [
     1.  gameJoin(with  7 argument):- playerId, tableId, chips, contestId, smallBlindAmount, bigBlindAmount, playerName
     2. playerAction :- example {
@@ -35,3 +35,4 @@ pot-amount,playerNames,turn-player ,player-action,countdown,player-message,playe
 **`countdown`** - Get time remaining for current player action
 **`player-message`** - Receive message if player has no chips
 **`playerchips`** - Receive the player chips of the smallblind and bigblind at the beginning of the pre-flop round 
+**`communityCard`** -In this event you will get all the community cards according to the game
