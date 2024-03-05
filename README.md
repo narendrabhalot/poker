@@ -6,7 +6,7 @@
 - Type -`[]` - represents `List|Array`
 - As per below table
 **` client listener  events`** -[cards,blindName,flopCards,turnCards,riverCards,displayPlayerOptions,blindTrnWithOutAction,gameEnded,winner,winnerAmount,disconnect,game-message,room message
-pot-amount,playerNames,turn-player ,player-action,countdown,player-message]
+pot-amount,playerNames,turn-player ,player-action,countdown,player-message,playerChips]
 **` client emiting   events`** [
     1.  gameJoin(with  7 argument):- playerId, tableId, chips, contestId, smallBlindAmount, bigBlindAmount, playerName
     2. playerAction :- example {
@@ -21,9 +21,9 @@ pot-amount,playerNames,turn-player ,player-action,countdown,player-message]
 **`blindName`** - Client receive blind name like [D,SB.BB]
 **`displayPlayerOptions`** - all player receive message depend on privious player action 
 **`flopCards`** - after completing batting round open 3 card on desk
-**`turnCards`** -  after completing flop round round open 1 card on desk
-**`riverCards`** - after completing turn round round open 1 card on desk
-**`winner`** - after completing river round  , get winner in room 
+**`turnCards`** - Open 1 card on the desk after completing the flop round
+**`riverCards`** -Open 1 card on the desk after completing the turn betting  round
+**`winner`** -get winner name , after completing the flop round
 **`winnerAmount`** - get winner amount  in room 
 **`room message`** - get message if new player join the game 
 **`gameEnded`** - after complete the game 
@@ -34,3 +34,4 @@ pot-amount,playerNames,turn-player ,player-action,countdown,player-message]
 **`player-action`** -After hitting any action like "Call", get playerName, current chips in a room
 **`countdown`** - Get time remaining for current player action
 **`player-message`** - Receive message if player has no chips
+**`playerchips`** - Receive the player chips of the smallblind and bigblind at the beginning of the pre-flop round 

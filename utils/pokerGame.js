@@ -457,6 +457,9 @@ class PokerGame {
   getNumberOfPlayers() {
     return this.numberOfPlayers;
   }
+  getCommunityCard() {
+    return this.communityCard;
+  }
   setNumberOfPlayers(totalPlayer) {
     this.numberOfPlayers = totalPlayer;
   }
