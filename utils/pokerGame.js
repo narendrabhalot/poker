@@ -75,7 +75,6 @@ class PokerGame {
       }
     }
   }
-
   async resetGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount) {
     let playerName = []
     for (const [index, player] of this.players.entries()) {
@@ -257,6 +256,7 @@ class PokerGame {
     });
   }
   async declareWinner(io, tableId) {
+    console.log("indide the winner in a poke game ", this.activePlayers, this.communityCard)
     const winner = winners.mergeHandwithCommunityCard(this.activePlayers, this.communityCard)
     let filterWinner = this.activePlayers.filter(data => data.id == winner.winnerId)
     filterWinner[0].chips += this.pot
@@ -495,4 +495,6 @@ async function waitForPlayerActionOrTimeout(currentPlayer, io, tableId) {
     });
   });
 }
+
+
 module.exports = PokerGame;
