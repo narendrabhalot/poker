@@ -60,8 +60,20 @@ function handleSocket(server) {
                     const playerMessage = room.players.length >= 2
                         ? "Wait for the game to complete"
                         : "Wait for a new player to join the game";
-                    await io.to(socket.id).emit('game-message', playerMessage)
-                    await io.to(socket.id).emit('communityCard', room.pokerGame.getCommunityCard());
+
+                    try {
+                        // Emit game message to the socket
+                        await io.to(socket.id).emit('game-message', playerMessage);
+
+                        // Emit game info to the socket
+                        await io.to(socket.id).emit('gameInfo', {
+                            communityCard: room.pokerGame.getCommunityCard(),
+                            playersInGame: room.pokerGame.getPlayers(),
+                        });
+                    } catch (error) {
+                        console.error('Error emitting game message or game info:', error);
+                    }
+
                 }
             } catch (error) {
                 console.error('Error in gameJoin:', error);

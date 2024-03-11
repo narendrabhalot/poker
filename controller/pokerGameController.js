@@ -15,21 +15,15 @@ const createPokerGame = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
-
 const getPokerGameById = async (req, res) => {
     try {
         const gameId = req.params.id; // Assuming the ID is in the URL parameter
-
-        // Find the game by its ID
         const game = await pokerModel.findById(gameId);
-
         if (!game) {
-            // If the game with the given ID is not found, return a 404 response
             res.status(404).json({ message: 'Game not found' });
             return;
         }
 
-        // If the game is found, return it in the response
         res.status(200).json({ game });
     } catch (error) {
         console.error(error);

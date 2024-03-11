@@ -457,6 +457,13 @@ class PokerGame {
   getNumberOfPlayers() {
     return this.numberOfPlayers;
   }
+  getPlayers() {
+    let tempPlayer = []
+    for (let player of this.players) {
+      tempPlayer.push({ playerId: player.playerId, playerName: player.playerName, playerChips: player.chips })
+    }
+    return tempPlayer
+  }
   getCommunityCard() {
     return this.communityCard;
   }
@@ -495,6 +502,4 @@ async function waitForPlayerActionOrTimeout(currentPlayer, io, tableId) {
     });
   });
 }
-
-
 module.exports = PokerGame;
