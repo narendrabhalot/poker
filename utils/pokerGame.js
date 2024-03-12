@@ -319,7 +319,7 @@ class PokerGame {
   }
   async displayPlayerOptions(io, currentPlayer, tableId, bigBlindAmount) {
     try {
-      await io.to(tableId).emit('turn-playerName', { playerId: currentPlayer.playerId, PlayerName: currentPlayer.playerName });
+      await io.to(tableId).emit('turn-player', { playerId: currentPlayer.playerId, PlayerName: currentPlayer.playerName });
       const { chips: betChips, totalChips } = currentPlayer;
       let callChip = totalChips > 0 ? this.maxBet - Number(totalChips) : this.minBet - Number(totalChips)
       let callChips = Number(callChip).toFixed(2);

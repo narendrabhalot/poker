@@ -1,6 +1,4 @@
 ## POKER GAME
-
-
 - Type - `Card` - `{value:'1', suit:'Hearts'}`
 - Suits - `['Hearts', 'Diamonds', 'Clubs', 'Spades']`
 - Type -`[]` - represents `List|Array`
@@ -35,4 +33,4 @@ pot-amount,playerNames,turn-player ,player-action,countdown,player-message,playe
 **`countdown`** - Get time remaining for current player action
 **`player-message`** - Receive message if player has no chips
 **`playerchips`** - Receive the player chips of the smallblind and bigblind at the beginning of the pre-flop round 
-**`communityCard`** -In this event you will get all the community cards according to the game
+**`gameInfo`** -In this event you will get all the community cards and get all players  according to the game state
