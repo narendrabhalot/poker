@@ -18,7 +18,7 @@ function handleSocket(server) {
                     rooms.set(tableId, room);
                 }
                 const numPlayers = room.players.length;
-                console.log(numPlayers);
+
                 if (numPlayers > 6) {
                     await io.to(socket.id).emit('game-message', "Wait until a seat becomes available");
                     return;
@@ -26,12 +26,10 @@ function handleSocket(server) {
                 const player = new PokerPlayer(socket.id, playerId, playerName, tableId, chips);
                 player.socket = socket;
                 room.players.push(player);
-                socket.join(tableId, () => {
-                    socket.tableId = tableId;
-                });
+                socket.join(tableId);
                 socket.tableId = tableId;
-                console.log(" socket is ", socket)
                 socket.player = player;
+
                 const roomSockets = io.sockets.adapter.rooms.get(tableId);
                 console.log(`Received data: ${playerId} joined ${tableId} with ${chips} chips`);
                 io.to(tableId).emit('room message', {
@@ -45,26 +43,24 @@ function handleSocket(server) {
                 room = rooms.get(tableId);
                 const reqParameter = { playerId, chips, roomId: tableId, contestId };
                 await pokerPlayerRoomModel.create(reqParameter);
-                console.log("room.players.length", room.players)
-                console.log("room.pokerGame", room.pokerGame)
+
                 if (room.players.length >= 2 && room.pokerGame == null) {
                     try {
                         rooms.get(tableId).pokerGame = new PokerGame(room.players, tableId, bigBlindAmount, 2);
+                        await io.to(socket.id).emit('gameInfo', {
+                            communityCard: room.pokerGame.getCommunityCard(),
+                            playersInGame: room.pokerGame.getPlayers(),
+                        });
                         rooms.get(tableId).pokerGame.startGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount);
                     } catch (error) {
                         console.error('Error starting game:', error);
                     } finally {
                         room.creatingGame = false;
                     }
-                } else {
-                    const playerMessage = room.players.length >= 2
-                        ? "Wait for the game to complete"
-                        : "Wait for a new player to join the game";
-
+                } else if (room.players.length >= 2) {
                     try {
                         // Emit game message to the socket
-                        await io.to(socket.id).emit('game-message', playerMessage);
-
+                        await io.to(socket.id).emit('game-message', "Wait for the game to complete");
                         // Emit game info to the socket
                         await io.to(socket.id).emit('gameInfo', {
                             communityCard: room.pokerGame.getCommunityCard(),
@@ -73,16 +69,20 @@ function handleSocket(server) {
                     } catch (error) {
                         console.error('Error emitting game message or game info:', error);
                     }
-
+                } else {
+                    await io.to(socket.id).emit('game-message', "Wait for a new player to join the game");
                 }
+
             } catch (error) {
                 console.error('Error in gameJoin:', error);
                 console.error(error.stack);
                 io.to(socket.id).emit('error', error.message);
             }
         });
+        console.log(socket)
         socket.on('disconnect', () => {
             console.log('A user disconnected');
+            console.log(socket)
             io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
             const tableId = socket.tableId;
             if (!tableId) return;
@@ -98,7 +98,7 @@ function handleSocket(server) {
                     room.pokerGame.setNumberOfPlayers(totalPlayer)
                     const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
                     activePlayers.splice(disConnectActiveIndex, 1)
-                    console.log("active player after the disconect ", activePlayers)
+
                 }
             }
         });
