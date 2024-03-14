@@ -110,7 +110,7 @@ class PokerGame {
     this.RoundNumber = 0
     this.status = 'started';
     this.firstRoundCompleted = false;
-    await io.to(tableId).emit("playerNames", playerName)
+    await io.to(tableId).emit("gameInfo", playerName)
     this.communityCard = []
     this.initializeGame();
     this.startGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount)
@@ -268,11 +268,14 @@ class PokerGame {
     try {
       this.currentPlayerIndex = this.smallBlindPosition
       this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
-      if (this.currentPlayer.action == "allIn" && this.numberOfPlayers > 1) {
-        this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
-        this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
-      } else {
-        return;
+      if (this.currentPlayer.action == "allIn") {
+        if (this.numberOfPlayers > 1) {
+          this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
+          this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
+        } else {
+          return;
+        }
+
       }
       while (this.status !== 'ended' && this.numberOfPlayers > 1) {
         try {
