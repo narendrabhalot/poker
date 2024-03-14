@@ -47,7 +47,7 @@ function handleSocket(server) {
                 if (room.players.length >= 2 && room.pokerGame == null) {
                     try {
                         rooms.get(tableId).pokerGame = new PokerGame(room.players, tableId, bigBlindAmount, 2);
-                        await io.to(socket.id).emit('gameInfo', {
+                        await io.to(tableId).emit('gameInfo', {
                             communityCard: room.pokerGame.getCommunityCard(),
                             playersInGame: room.pokerGame.getPlayers(),
                         });
@@ -62,7 +62,7 @@ function handleSocket(server) {
                         // Emit game message to the socket
                         await io.to(socket.id).emit('game-message', "Wait for the game to complete");
                         // Emit game info to the socket
-                        await io.to(socket.id).emit('gameInfo', {
+                        await io.to(tableId).emit('gameInfo', {
                             communityCard: room.pokerGame.getCommunityCard(),
                             playersInGame: room.pokerGame.getPlayers(),
                         });
@@ -98,7 +98,6 @@ function handleSocket(server) {
                     room.pokerGame.setNumberOfPlayers(totalPlayer)
                     const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
                     activePlayers.splice(disConnectActiveIndex, 1)
-
                 }
             }
         });
