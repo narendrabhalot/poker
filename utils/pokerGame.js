@@ -268,15 +268,7 @@ class PokerGame {
     try {
       this.currentPlayerIndex = this.smallBlindPosition
       this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
-      if (this.currentPlayer.action == "allIn") {
-        if (this.numberOfPlayers > 1) {
-          this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
-          this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
-        } else {
-          return;
-        }
 
-      }
       while (this.status !== 'ended' && this.numberOfPlayers > 1) {
         try {
           await this.displayPlayerOptions(io, this.currentPlayer, tableId, bigBlindAmount);
@@ -295,12 +287,7 @@ class PokerGame {
           this.previousPlayer = this.currentPlayer;
           this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
           this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
-          if (this.currentPlayer.action == "allIn" && this.numberOfPlayers > 1) {
-            this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
-            this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
-          } else {
-            break;
-          }
+
         } catch (err) {
           console.error('Error handling in next player:', err);
         }
