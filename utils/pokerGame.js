@@ -110,7 +110,7 @@ class PokerGame {
     this.RoundNumber = 0
     this.status = 'started';
     this.firstRoundCompleted = false;
-    await io.to(tableId).emit("gameInfo", playerName)
+    await io.to(tableId).emit("gameInfo", { communityCard: [], playersInGame: playerName })
     this.communityCard = []
     this.initializeGame();
     this.startGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount)
