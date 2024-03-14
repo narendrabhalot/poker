@@ -83,7 +83,7 @@ class PokerGame {
         this.players.splice(index, 1)
         continue;
       }
-      playerName.push({ playerId: player.playerId, PlayerName: player.PlayerName, chips: player.chips })
+      playerName.push({ playerId: player.playerId, playerName: player.playerName, chips: player.chips })
       player.status = 0
       player.totalChips = 0
       player.folded = false;
