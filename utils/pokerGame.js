@@ -131,20 +131,20 @@ class PokerGame {
       if (this.activePlayers.length == 2) {
         this.activePlayers[this.dealerPosition].blindName = "BB"
         this.activePlayers[this.smallBlindPosition].blindName = "SB"
-        await io.to(tableId).emit('blindName', { blindName: "SB", player: this.activePlayers[this.smallBlindPosition].playerId });
-        await io.to(tableId).emit('blindName', { blindName: "BB", player: this.activePlayers[this.dealerPosition].playerId });
+        await io.to(tableId).emit('blindName', { blindName: "SB", playerId: this.activePlayers[this.smallBlindPosition].playerId, playerName: this.activePlayers[this.smallBlindPosition].playerName });
+        await io.to(tableId).emit('blindName', { blindName: "BB", playerId: this.activePlayers[this.dealerPosition].playerId });
       } else if (this.activePlayers.length > 2 && this.dealerPosition > this.bigBlindPosition) {
         this.activePlayers[this.dealerPosition].blindName = "D"
         this.activePlayers[this.smallBlindPosition].blindName = "SB"
         this.activePlayers[this.bigBlindPosition].blindName = "BB"
-        await io.to(tableId).emit('blindName', { blindName: "D", player: this.players[this.dealerPosition].playerId });
-        await io.to(tableId).emit('blindName', { blindName: "SB", player: this.players[this.smallBlindPosition].playerId });
-        await io.to(tableId).emit('blindName', { blindName: "BB", player: this.players[this.bigBlindPosition].playerId });
+        await io.to(tableId).emit('blindName', { blindName: "D", playerId: this.players[this.dealerPosition].playerId, playerId: this.players[this.dealerPosition].playerName });
+        await io.to(tableId).emit('blindName', { blindName: "SB", playerId: this.players[this.smallBlindPosition].playerId, playerName: this.activePlayers[this.smallBlindPosition].playerName });
+        await io.to(tableId).emit('blindName', { blindName: "BB", playerId: this.players[this.bigBlindPosition].playerId, playerName: this.activePlayers[this.bigBlindPosition].playerName });
       } else {
         for (let i = this.dealerPosition; i <= this.bigBlindPosition; i++) {
           this.activePlayers[i].blindName = positionArr[count];
           try {
-            await io.to(tableId).emit('blindName', { blindName: positionArr[count], player: this.players[i].playerId });
+            await io.to(tableId).emit('blindName', { blindName: positionArr[count], playerId: this.players[i].playerId, playerName: this.players[i].playerName });
           } catch (err) {
             console.error("Error emitting blindName to player:", this.activePlayers[i].id, err);
           }

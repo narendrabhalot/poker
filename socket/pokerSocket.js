@@ -29,7 +29,6 @@ function handleSocket(server) {
                 socket.join(tableId);
                 socket.tableId = tableId;
                 socket.player = player;
-
                 const roomSockets = io.sockets.adapter.rooms.get(tableId);
                 console.log(`Received data: ${playerId} joined ${tableId} with ${chips} chips`);
                 io.to(tableId).emit('room message', {
@@ -43,7 +42,6 @@ function handleSocket(server) {
                 room = rooms.get(tableId);
                 const reqParameter = { playerId, chips, roomId: tableId, contestId };
                 await pokerPlayerRoomModel.create(reqParameter);
-
                 if (room.players.length >= 2 && room.pokerGame == null) {
                     try {
                         rooms.get(tableId).pokerGame = new PokerGame(room.players, tableId, bigBlindAmount, 2);
@@ -59,9 +57,7 @@ function handleSocket(server) {
                     }
                 } else if (room.players.length >= 2) {
                     try {
-                        // Emit game message to the socket
                         await io.to(socket.id).emit('game-message', "Wait for the game to complete");
-                        // Emit game info to the socket
                         await io.to(tableId).emit('gameInfo', {
                             communityCard: room.pokerGame.getCommunityCard(),
                             playersInGame: room.pokerGame.getPlayers(),
@@ -80,6 +76,31 @@ function handleSocket(server) {
             }
         });
         console.log(socket)
+        socket.on('leave', () => {
+            try {
+                io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
+                const tableId = socket.tableId;
+                if (!tableId) return;
+                const room = rooms.get(tableId);
+                if (!room) return;
+                const index = room.players.findIndex((p) => p.id === socket.id);
+                if (index !== -1) {
+                    room.players.splice(index, 1);
+                    if (room.pokerGame) {
+                        const activePlayers = room.pokerGame.getActivePlayers();
+                        let totalPlayer = room.pokerGame.getNumberOfPlayers();
+                        totalPlayer -= 1;
+                        room.pokerGame.setNumberOfPlayers(totalPlayer);
+                        const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
+                        activePlayers.splice(disConnectActiveIndex, 1);
+                    }
+                }
+            } catch (error) {
+                console.error('Error handling socket disconnect:', error);
+
+            }
+        });
+
         socket.on('disconnect', () => {
             try {
                 console.log('A user disconnected');

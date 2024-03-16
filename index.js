@@ -16,18 +16,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors({
   origin: 'http://localhost:3000',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true, // Enable if you need to send cookies with the request
+  credentials: true,
 }));
 mongoose.connect("mongodb+srv://Narendrapatidar:LRMKecvjA5XotfMK@cluster0.hxlgz.mongodb.net/POKERS", { useNewUrlParser: true })
   .then(() => console.log("MongoDB is connected"))
   .catch((err) => console.log(err.message));
-
-handleSocket(server);   //poker calling server
-
+handleSocket(server);
 app.use("/", route);
-
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
