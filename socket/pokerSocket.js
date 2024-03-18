@@ -23,6 +23,14 @@ function handleSocket(server) {
                     await io.to(socket.id).emit('game-message', "Wait until a seat becomes available");
                     return;
                 }
+                let checkPlayerExist = room.players.find(player => player.playerId === playerId);
+
+                if (checkPlayerExist) {
+
+                    await io.to(socket.id).emit('game-message', "You are already in the game");
+                    return;
+                }
+
                 const player = new PokerPlayer(socket.id, playerId, playerName, tableId, chips);
                 player.socket = socket;
                 room.players.push(player);
@@ -76,35 +84,11 @@ function handleSocket(server) {
             }
         });
         console.log(socket)
-        socket.on('leave', () => {
-            try {
-                io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
-                const tableId = socket.tableId;
-                if (!tableId) return;
-                const room = rooms.get(tableId);
-                if (!room) return;
-                const index = room.players.findIndex((p) => p.id === socket.id);
-                if (index !== -1) {
-                    room.players.splice(index, 1);
-                    if (room.pokerGame) {
-                        const activePlayers = room.pokerGame.getActivePlayers();
-                        let totalPlayer = room.pokerGame.getNumberOfPlayers();
-                        totalPlayer -= 1;
-                        room.pokerGame.setNumberOfPlayers(totalPlayer);
-                        const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
-                        activePlayers.splice(disConnectActiveIndex, 1);
-                    }
-                }
-            } catch (error) {
-                console.error('Error handling socket disconnect:', error);
 
-            }
-        });
 
         socket.on('disconnect', () => {
             try {
                 console.log('A user disconnected');
-                console.log(socket);
                 io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
                 const tableId = socket.tableId;
                 if (!tableId) return;
@@ -120,11 +104,13 @@ function handleSocket(server) {
                         room.pokerGame.setNumberOfPlayers(totalPlayer);
                         const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
                         activePlayers.splice(disConnectActiveIndex, 1);
+                        console.log(room.pokerGame.getActivePlayers())
+                        console.log("narendra is here")
                     }
                 }
             } catch (error) {
                 console.error('Error handling socket disconnect:', error);
-                // You can choose to handle the error in any appropriate manner, like logging or sending an error response.
+
             }
         });
 

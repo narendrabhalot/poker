@@ -448,6 +448,9 @@ class PokerGame {
   getActivePlayers() {
     return this.activePlayers;
   }
+  getPlayer() {
+    return this.players
+  }
   getNumberOfPlayers() {
     return this.numberOfPlayers;
   }
