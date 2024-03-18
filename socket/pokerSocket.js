@@ -18,7 +18,6 @@ function handleSocket(server) {
                     rooms.set(tableId, room);
                 }
                 const numPlayers = room.players.length;
-
                 if (numPlayers > 6) {
                     await io.to(socket.id).emit('game-message', "Wait until a seat becomes available");
                     return;
@@ -85,59 +84,64 @@ function handleSocket(server) {
         });
         socket.on('exit', () => {
             try {
-                io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
-                const tableId = socket.tableId;
-                if (!tableId) return;
-                const room = rooms.get(tableId);
-                if (!room) return;
-                const index = room.players.findIndex((p) => p.id === socket.id);
-                if (index !== -1) {
-                    room.players.splice(index, 1);
-                    if (room.pokerGame) {
-                        const activePlayers = room.pokerGame.getActivePlayers();
-                        let totalPlayer = room.pokerGame.getNumberOfPlayers();
-                        totalPlayer -= 1;
-                        room.pokerGame.setNumberOfPlayers(totalPlayer);
-                        const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
-                        activePlayers.splice(disConnectActiveIndex, 1);
-                        console.log(room.pokerGame.getActivePlayers())
-                        console.log("narendra is here")
-                    }
-                }
+                handleSocketExit(io, socket, rooms);
             } catch (error) {
-                console.error('Error handling socket disconnect:', error);
-
+                console.error('Error handling socket exit:', error);
             }
         });
-
         socket.on('disconnect', () => {
             try {
-                console.log('A user disconnected');
-                io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
-                const tableId = socket.tableId;
-                if (!tableId) return;
-                const room = rooms.get(tableId);
-                if (!room) return;
-                const index = room.players.findIndex((p) => p.id === socket.id);
-                if (index !== -1) {
-                    room.players.splice(index, 1);
-                    if (room.pokerGame) {
-                        const activePlayers = room.pokerGame.getActivePlayers();
-                        let totalPlayer = room.pokerGame.getNumberOfPlayers();
-                        totalPlayer -= 1;
-                        room.pokerGame.setNumberOfPlayers(totalPlayer);
-                        const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
-                        activePlayers.splice(disConnectActiveIndex, 1);
-                        console.log(room.pokerGame.getActivePlayers())
-                        console.log("narendra is here")
-                    }
-                }
+                handleSocketDisconnect(io, socket, rooms);
             } catch (error) {
                 console.error('Error handling socket disconnect:', error);
-
             }
         });
 
     });
+}
+
+async function handleSocketExit(io,socket, rooms) {
+    io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
+    const tableId = socket.tableId;
+    if (!tableId) return;
+    const room = rooms.get(tableId);
+    if (!room) return;
+    const index = room.players.findIndex((p) => p.id === socket.id);
+    if (index !== -1) {
+        room.players.splice(index, 1);
+        if (room.pokerGame) {
+            const activePlayers = room.pokerGame.getActivePlayers();
+            let totalPlayer = room.pokerGame.getNumberOfPlayers();
+            totalPlayer -= 1;
+            room.pokerGame.setNumberOfPlayers(totalPlayer);
+            const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
+            activePlayers.splice(disConnectActiveIndex, 1);
+            console.log(room.pokerGame.getActivePlayers())
+            console.log("narendra is here")
+        }
+    }
+}
+
+async function handleSocketDisconnect(io,socket, rooms) {
+    console.log('A user disconnected');
+    io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
+    const tableId = socket.tableId;
+    if (!tableId) return;
+    const room = rooms.get(tableId);
+    if (!room) return;
+    const index = room.players.findIndex((p) => p.id === socket.id);
+    if (index !== -1) {
+        room.players.splice(index, 1);
+        if (room.pokerGame) {
+            const activePlayers = room.pokerGame.getActivePlayers();
+            let totalPlayer = room.pokerGame.getNumberOfPlayers();
+            totalPlayer -= 1;
+            room.pokerGame.setNumberOfPlayers(totalPlayer);
+            const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
+            activePlayers.splice(disConnectActiveIndex, 1);
+            console.log(room.pokerGame.getActivePlayers())
+            console.log("narendra is here")
+        }
+    }
 }
 module.exports = handleSocket;
