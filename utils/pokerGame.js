@@ -79,7 +79,7 @@ class PokerGame {
     let playerName = []
     for (const [index, player] of this.players.entries()) {
       if (player.chips == 0) {
-        await io.to(player.id).emit('player-pomessage', " you need to add more chips to the table in order to continue ");
+        await io.to(player.id).emit('player-message', " you need to add more chips to the table in order to continue ");
         this.players.splice(index, 1)
         continue;
       }
