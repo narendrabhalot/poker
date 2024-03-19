@@ -163,6 +163,7 @@ class PokerGame {
       this.previousPlayer = this.currentPlayer;
       this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
       this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
+      this.activePlayers[this.currentPlayerIndex].action = "bet"
       await this.deductChips(this.currentPlayer, bigBlindAmount, tableId, io)
       this.previousPlayer = this.currentPlayer;
       this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
@@ -174,18 +175,22 @@ class PokerGame {
         try {
           console.log("inside the while loop ")
           await this.displayPlayerOptions(io, this.currentPlayer, tableId, bigBlindAmount);
-
           let action = await waitForPlayerActionOrTimeout(this.currentPlayer, io, tableId);
-          this.currentBet = action.chips
-          if (this.maxBet < action.chips) {
-            this.maxBet = action.chips
-          }
           await this.handlePlayerAction(this.currentPlayer, action);
           await io.to(tableId).emit('player-action', { player: this.currentPlayer.playerId, action: action, chips: this.currentPlayer.chips });
           await io.to(tableId).emit('pot-amount', { potAmount: this.pot });
+          this.currentBet = action.chips
+          if (this.maxBet < this.currentPlayer.totalChips) {
+            this.maxBet = this.currentPlayer.totalChips
+          }
           this.previousPlayer = this.currentPlayer;
           this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
           this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
+          if (this.currentPlayer.action == 'allIn') {
+            this.previousPlayer = this.currentPlayer;
+            this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
+            this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
+          }
         } catch (err) {
           console.error('Error handling in next player:', err);
         }
@@ -256,38 +261,55 @@ class PokerGame {
     });
   }
   async declareWinner(io, tableId) {
-    console.log("indide the winner in a poke game ", this.activePlayers, this.communityCard)
-    const winner = winners.mergeHandwithCommunityCard(this.activePlayers, this.communityCard)
-    let filterWinner = this.activePlayers.filter(data => data.id == winner.winnerId)
-    filterWinner[0].chips += this.pot
-    await io.to(tableId).emit('winner', { winner: winner, winnerId: filterWinner[0].id, winnerName: filterWinner[0].playerName, winningChips: this.pot });
-    await io.to(tableId).emit('winnerAmount', filterWinner[0].chips)
-    this.pot = 0
+    console.log("inside the winner in a poke game ", this.activePlayers, this.communityCard);
+
+    try {
+
+      const winner = winners.mergeHandwithCommunityCard(this.activePlayers, this.communityCard);
+      const winningPlayer = this.activePlayers.find(data => data.id === winner.winnerId);
+      if (!winningPlayer) {
+        throw new Error('No winning player found');
+      }
+      winningPlayer.chips += this.pot;
+      await io.to(tableId).emit('winner', { winner, winnerId: winningPlayer.id, winnerName: winningPlayer.playerName, winningChips: this.pot });
+      await io.to(tableId).emit('winnerAmount', winningPlayer.chips);
+      this.pot = 0;
+    } catch (error) {
+      console.error('Error declaring winner:', error);
+      await io.to(tableId).emit('error', 'An error occurred while determining the winner.');
+    }
   }
+
   async flopCardBattingRound(io, tableId, bigBlindAmount) {
     try {
       this.currentPlayerIndex = this.smallBlindPosition
       this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
-
+      if (this.currentPlayer.action == "allIn") {
+        this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
+        this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
+      }
       while (this.status !== 'ended' && this.numberOfPlayers > 1) {
         try {
           await this.displayPlayerOptions(io, this.currentPlayer, tableId, bigBlindAmount);
           let action = await waitForPlayerActionOrTimeout(this.currentPlayer, io, tableId);
-          console.log("this.current bet and nother", this.currentBet, this.maxBet, this.minBet)
+          await this.handlePlayerAction(this.currentPlayer, action);
+          await io.to(tableId).emit('player-action', { player: this.currentPlayer.playerId, action: action, chips: this.currentPlayer.chips });
+          await io.to(tableId).emit('pot-amount', { potAmount: this.pot });
+          // console.log("this.current bet and nother", this.currentBet, this.maxBet, this.minBet)
           this.currentBet = action.chips
           if (this.minBet < this.currentBet) {
             this.minBet = this.currentBet
           }
-          if (this.maxBet < action.chips) {
-            this.maxBet = action.chips
+          if (this.maxBet < this.currentPlayer.totalChips) {
+            this.maxBet = this.currentPlayer.totalChips
           }
-          await this.handlePlayerAction(this.currentPlayer, action);
-          await io.to(tableId).emit('player-action', { player: this.currentPlayer.playerId, action: action, chips: this.currentPlayer.chips });
-          await io.to(tableId).emit('pot-amount', { potAmount: this.pot });
           this.previousPlayer = this.currentPlayer;
           this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
           this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
-
+          if (this.currentPlayer.action == "allIn") {
+            this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.numberOfPlayers;
+            this.currentPlayer = this.activePlayers[this.currentPlayerIndex]
+          }
         } catch (err) {
           console.error('Error handling in next player:', err);
         }
@@ -362,6 +384,7 @@ class PokerGame {
           break;
         case 'check':
         case 'allIn':
+          this.currentBet = normalizedChips
           player.action = action;
           this.activePlayers[this.currentPlayerIndex].totalChips += chips
           this.activePlayers[this.currentPlayerIndex].chips -= chips
@@ -419,18 +442,19 @@ class PokerGame {
     try {
       this.gameOver = true;
       io.to(tableId).emit('gameEnded', { message: 'Game over! Thank you for playing!' });
+      if (this.players.length < 1) {
+        console.log("inside the game ens if there is no any player ", this.players, this.activePlayers)
+        rooms.get(tableId).pokerGame = null;
+        console.log("rooms after remove the player ", rooms);
+        return;
+      } else {
+        console.warn("Room not found; ignoring attempt to remove pokerGame");
+      }
       if (rooms.get(tableId).players.length === 1) {
         try {
           await io.to(this.players[0].id).emit('room message', "Please wait for a new player to join the game ");
         } catch (error) {
           console.error("Error sending message to player:", error);
-        }
-        if (rooms.has(tableId)) {
-          rooms.get(tableId).pokerGame = null;
-          console.log("rooms after remove the player ", rooms);
-          return;
-        } else {
-          console.warn("Room not found; ignoring attempt to remove pokerGame");
         }
       } else {
         setTimeout(async () => {

@@ -30,7 +30,7 @@ function handleSocket(server) {
                     return;
                 }
 
-                const player = new PokerPlayer(socket.id, playerId, playerName, tableId, chips);
+                const player = new PokerPlayer(socket.id, playerId, playerName, tableId, Number(chips));
                 player.socket = socket;
                 room.players.push(player);
                 socket.join(tableId);
@@ -100,12 +100,13 @@ function handleSocket(server) {
     });
 }
 
-async function handleSocketExit(io,socket, rooms) {
+async function handleSocketExit(io, socket, rooms) {
     io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
     const tableId = socket.tableId;
     if (!tableId) return;
     const room = rooms.get(tableId);
     if (!room) return;
+
     const index = room.players.findIndex((p) => p.id === socket.id);
     if (index !== -1) {
         room.players.splice(index, 1);
@@ -116,19 +117,23 @@ async function handleSocketExit(io,socket, rooms) {
             room.pokerGame.setNumberOfPlayers(totalPlayer);
             const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
             activePlayers.splice(disConnectActiveIndex, 1);
-            console.log(room.pokerGame.getActivePlayers())
-            console.log("narendra is here")
+            console.log(room.pokerGame.getActivePlayers());
+            if (room.players.length === 0) {
+                room.pokerGame = null;
+                io.to(tableId).emit('game-message', 'The game has ended due to disconnection of all players.');
+            }
         }
     }
 }
 
-async function handleSocketDisconnect(io,socket, rooms) {
+async function handleSocketDisconnect(io, socket, rooms) {
     console.log('A user disconnected');
     io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
     const tableId = socket.tableId;
     if (!tableId) return;
     const room = rooms.get(tableId);
     if (!room) return;
+
     const index = room.players.findIndex((p) => p.id === socket.id);
     if (index !== -1) {
         room.players.splice(index, 1);
@@ -139,8 +144,13 @@ async function handleSocketDisconnect(io,socket, rooms) {
             room.pokerGame.setNumberOfPlayers(totalPlayer);
             const disConnectActiveIndex = activePlayers.findIndex((p) => p.id === socket.id);
             activePlayers.splice(disConnectActiveIndex, 1);
-            console.log(room.pokerGame.getActivePlayers())
-            console.log("narendra is here")
+            console.log(room.pokerGame.getActivePlayers());
+
+            // Check if any players remain after disconnection
+            if (room.players.length === 0) {
+                room.pokerGame = null; // Clear game reference
+                io.to(tableId).emit('game-message', 'The game has ended due to disconnection of all players.');
+            }
         }
     }
 }
