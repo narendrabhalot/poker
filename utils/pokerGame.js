@@ -198,7 +198,7 @@ class PokerGame {
           this.activePlayers.forEach(player => { player.totalChips = 0 });
           this.currentBet = 0
           this.maxBet = 0
-          this.minBet = 1
+          this.minBet = bigBlindAmount
           this.gameRound = 1
           break;
         }
@@ -317,14 +317,14 @@ class PokerGame {
           if (this.currentPlayerIndex == this.smallBlindPosition) {
             this.activePlayers.forEach(player => {
               player.totalChips = 0;
-              this.minBet = 1
+              this.minBet = bigBlindAmount
             })
             break;
           } else if (this.maxBet > 0) {
             this.activePlayers.forEach(player => { player.totalChips = 0 });
             this.currentBet = 0
             this.maxBet = 0
-            this.minBet = 1
+            this.minBet = bigBlindAmount
             break;
           }
         }
