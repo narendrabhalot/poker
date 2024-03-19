@@ -39,7 +39,7 @@ class PokerGame {
       await this.startBettingRound(io, tableId, smallBlindAmount, bigBlindAmount);
       console.log('Game has completed the first round.');
       await this.startFlopRound(io, tableId, bigBlindAmount);
-      console.log("start round player", this.activePlayers);
+      // console.log("start round player", this.activePlayers);
       console.log('Game has completed the flop round');
       await this.startTurnRound(io, tableId, bigBlindAmount);
       console.log('Game has completed the turn round');
@@ -79,7 +79,7 @@ class PokerGame {
     let playerName = []
     for (const [index, player] of this.players.entries()) {
       if (player.chips == 0) {
-        await io.to(player.id).emit('player-message', " you need to add more chips to the table in order to continue ");
+        await io.to(player.id).emit('player-pomessage', " you need to add more chips to the table in order to continue ");
         this.players.splice(index, 1)
         continue;
       }
@@ -261,7 +261,7 @@ class PokerGame {
     });
   }
   async declareWinner(io, tableId) {
-    console.log("inside the winner in a poke game ", this.activePlayers, this.communityCard);
+    // console.log("inside the winner in a poke game ", this.activePlayers, this.communityCard);
 
     try {
 
@@ -367,11 +367,12 @@ class PokerGame {
   async handlePlayerAction(player, actionData) {
     try {
       const { action, chips } = actionData;
-      const normalizedChips = Number(chips);
+      const normalizedChips = Number((chips).toFixed(2));
+      console.log("normalizedChips", typeof normalizedChips, normalizedChips)
       this.pot += normalizedChips
       console.log(normalizedChips)
       console.log("this .currentBet is ", this.currentBet)
-      console.log("current player detail before anu apdation ", this.activePlayers[this.currentPlayerIndex])
+      // console.log("current player detail before anu apdation ", this.activePlayers[this.currentPlayerIndex])
       switch (action) {
         case 'bet':
           this.handleBet(normalizedChips);
@@ -388,7 +389,7 @@ class PokerGame {
           player.action = action;
           this.activePlayers[this.currentPlayerIndex].totalChips += chips
           this.activePlayers[this.currentPlayerIndex].chips -= chips
-          console.log(" this.activePlayers[this.currentPlayerIndex]    player chips after the allin is a ", this.activePlayers[this.currentPlayerIndex])
+          // console.log(" this.activePlayers[this.currentPlayerIndex]    player chips after the allin is a ", this.activePlayers[this.currentPlayerIndex])
           break;
         default:
           console.warn('Invalid player action:', action);
@@ -443,9 +444,9 @@ class PokerGame {
       this.gameOver = true;
       io.to(tableId).emit('gameEnded', { message: 'Game over! Thank you for playing!' });
       if (this.players.length < 1) {
-        console.log("inside the game ens if there is no any player ", this.players, this.activePlayers)
+        // console.log("inside the game ens if there is no any player ", this.players, this.activePlayers)
         rooms.get(tableId).pokerGame = null;
-        console.log("rooms after remove the player ", rooms);
+        // console.log("rooms after remove the player ", rooms);
         return;
       } else {
         console.warn("Room not found; ignoring attempt to remove pokerGame");

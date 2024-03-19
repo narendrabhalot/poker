@@ -25,11 +25,9 @@ function handleSocket(server) {
                 let checkPlayerExist = room.players.find(player => player.playerId === playerId);
 
                 if (checkPlayerExist) {
-
                     await io.to(socket.id).emit('game-message', "You are already in the game");
                     return;
                 }
-
                 const player = new PokerPlayer(socket.id, playerId, playerName, tableId, Number(chips));
                 player.socket = socket;
                 room.players.push(player);
@@ -56,7 +54,7 @@ function handleSocket(server) {
                             communityCard: room.pokerGame.getCommunityCard(),
                             playersInGame: room.pokerGame.getPlayers(),
                         });
-                        rooms.get(tableId).pokerGame.startGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount);
+                        rooms.get(tableId).pokerGame.startGame(io, tableId, rooms, Number(smallBlindAmount), Number(bigBlindAmount));
                     } catch (error) {
                         console.error('Error starting game:', error);
                     } finally {
