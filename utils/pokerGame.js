@@ -420,11 +420,11 @@ class PokerGame {
       if (!player || isNaN(chips) || chips <= 0 || !tableId || !io) {
         throw new Error('Invalid input');
       }
-      chips = Number(chips);
-      if (player.chips >= chips) {
-        this.activePlayers[this.currentPlayerIndex].chips -= chips;
-        this.activePlayers[this.currentPlayerIndex].totalChips += chips;
-        this.pot += chips;
+      const normalizedChips = Number((chips).toFixed(2));
+      if (player.chips >= normalizedChips) {
+        this.activePlayers[this.currentPlayerIndex].chips -= normalizedChips;
+        this.activePlayers[this.currentPlayerIndex].totalChips += normalizedChips;
+        this.pot += normalizedChips;
         await io.to(tableId).emit('pot-amount', { potAmount: this.pot });
         await io.to(tableId).emit('playerChips', {
           currentPlayerChips: this.activePlayers[this.currentPlayerIndex].chips,
