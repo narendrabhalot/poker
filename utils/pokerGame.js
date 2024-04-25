@@ -33,6 +33,7 @@ class PokerGame {
     this.dealInitialCards();
   }
   async startGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount) {
+    console.log("inside the rooms ")
     try {
       await this.emitCardsAndPositions(io, tableId);
       await this.emitPositions(io, tableId)
@@ -262,9 +263,7 @@ class PokerGame {
   }
   async declareWinner(io, tableId) {
     // console.log("inside the winner in a poke game ", this.activePlayers, this.communityCard);
-
     try {
-
       const winner = winners.mergeHandwithCommunityCard(this.activePlayers, this.communityCard);
       const winningPlayer = this.activePlayers.find(data => data.id === winner.winnerId);
       if (!winningPlayer) {
@@ -443,23 +442,24 @@ class PokerGame {
     try {
       this.gameOver = true;
       io.to(tableId).emit('gameEnded', { message: 'Game over! Thank you for playing!' });
+      console.log("this.players after disconnect then join ", this.players)
       if (this.players.length < 1) {
-        // console.log("inside the game ens if there is no any player ", this.players, this.activePlayers)
         rooms.get(tableId).pokerGame = null;
-        // console.log("rooms after remove the player ", rooms);
         return;
-      } else {
-        console.warn("Room not found; ignoring attempt to remove pokerGame");
       }
       if (rooms.get(tableId).players.length === 1) {
+        console.log("only one player is present ")
         try {
           await io.to(this.players[0].id).emit('room message', "Please wait for a new player to join the game ");
+          rooms.get(tableId).pokerGame = null;
+          return;
         } catch (error) {
           console.error("Error sending message to player:", error);
         }
       } else {
         setTimeout(async () => {
           try {
+            // console.log("rooms after before the reset game ", rooms)
             await this.resetGame(io, tableId, rooms, smallBlindAmount, bigBlindAmount);
           } catch (error) {
             console.error("Error resetting game:", error);

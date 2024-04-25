@@ -45,7 +45,6 @@ class PokerPlayer {
     setAllIn(status) {
         this.allIn = status;
     }
-
     setCards(cards) {
         this.cards = cards;
     }

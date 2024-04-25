@@ -5,6 +5,7 @@ const pokerPlayerRoomModel = require('../models/pokerPlayerRoom')
 function handleSocket(server) {
     const io = socketIO(server);
     const rooms = new Map();
+    console.log("rooms is ", rooms)
     io.on('connection', (socket) => {
         console.log('User is connected');
         socket.on('gameJoin', async (playerId, tableId, chips, contestId, smallBlindAmount, bigBlindAmount, playerName) => {
@@ -13,6 +14,7 @@ function handleSocket(server) {
                     throw new Error('Invalid playerId, playerName,tableId, contestId or chips');
                 }
                 let room = rooms.get(tableId);
+
                 if (!room) {
                     room = { players: [], pokerGame: null };
                     rooms.set(tableId, room);
@@ -23,7 +25,6 @@ function handleSocket(server) {
                     return;
                 }
                 let checkPlayerExist = room.players.find(player => player.playerId === playerId);
-
                 if (checkPlayerExist) {
                     await io.to(socket.id).emit('game-message', "You are already in the game");
                     return;
@@ -47,7 +48,9 @@ function handleSocket(server) {
                 room = rooms.get(tableId);
                 const reqParameter = { playerId, chips, roomId: tableId, contestId };
                 await pokerPlayerRoomModel.create(reqParameter);
+                console.log("room after diconnect then connect ", room)
                 if (room.players.length >= 2 && room.pokerGame == null) {
+                    console.log("i am inside if condition after diconnect then connect ")
                     try {
                         rooms.get(tableId).pokerGame = new PokerGame(room.players, tableId, bigBlindAmount, 2);
                         await io.to(tableId).emit('gameInfo', {
@@ -60,6 +63,9 @@ function handleSocket(server) {
                     } finally {
                         room.creatingGame = false;
                     }
+                } else if (room.players.length == 2) {
+                    rooms.get(tableId).pokerGame = new PokerGame(room.players, tableId, bigBlindAmount, 2);
+                    rooms.get(tableId).pokerGame.startGame(io, tableId, rooms, Number(smallBlindAmount), Number(bigBlindAmount));
                 } else if (room.players.length >= 2) {
                     try {
                         await io.to(socket.id).emit('game-message', "Wait for the game to complete");
@@ -73,7 +79,6 @@ function handleSocket(server) {
                 } else {
                     await io.to(socket.id).emit('game-message', "Wait for a new player to join the game");
                 }
-
             } catch (error) {
                 console.error('Error in gameJoin:', error);
                 console.error(error.stack);
@@ -97,7 +102,6 @@ function handleSocket(server) {
 
     });
 }
-
 async function handleSocketExit(io, socket, rooms) {
     io.to(socket.id).emit('room message', { msg: `${socket.player.playerId} disconnect socket` });
     const tableId = socket.tableId;
@@ -149,6 +153,7 @@ async function handleSocketDisconnect(io, socket, rooms) {
                 room.pokerGame = null; // Clear game reference
                 io.to(tableId).emit('game-message', 'The game has ended due to disconnection of all players.');
             }
+            console.log('room after disconnect ', rooms)
         }
     }
 }
