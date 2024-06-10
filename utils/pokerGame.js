@@ -424,6 +424,7 @@ class PokerGame {
         this.activePlayers[this.currentPlayerIndex].chips -= normalizedChips;
         this.activePlayers[this.currentPlayerIndex].totalChips += normalizedChips;
         this.pot += normalizedChips;
+        console.log("amount is ", this.activePlayers[this.currentPlayerIndex].chips, this.activePlayers[this.currentPlayerIndex].totalChips, this.pot)
         await io.to(tableId).emit('pot-amount', { potAmount: this.pot });
         await io.to(tableId).emit('playerChips', {
           currentPlayerChips: this.activePlayers[this.currentPlayerIndex].chips,
@@ -450,9 +451,16 @@ class PokerGame {
       if (rooms.get(tableId).players.length === 1) {
         console.log("only one player is present ")
         try {
-          await io.to(this.players[0].id).emit('room message', "Please wait for a new player to join the game ");
-          rooms.get(tableId).pokerGame = null;
-          return;
+          setTimeout(async () => {
+            try {
+              await io.to(this.players[0].id).emit('room message', "Please wait for a new player to join the game ");
+              rooms.get(tableId).pokerGame = null;
+              return;
+            } catch (error) {
+              console.error("Error resetting game:", error);
+            }
+          }, 10000);
+
         } catch (error) {
           console.error("Error sending message to player:", error);
         }
